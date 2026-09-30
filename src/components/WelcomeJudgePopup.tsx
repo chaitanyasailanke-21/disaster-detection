@@ -36,7 +36,7 @@ export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md transition-opacity duration-500 animate-fade-in pointer-events-auto"
       role="dialog"
       aria-modal="true"
-      aria-label="Welcome SIH judge"
+      aria-label="Welcome to SIH"
     >
       <div className="relative w-full max-w-lg bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-2xl p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-slate-100 font-sans overflow-hidden">
         {/* Glowing top ambient light */}
@@ -64,7 +64,7 @@ export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss 
 
           {/* Primary Welcome Heading */}
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-300 tracking-tight mb-2">
-            Welcome SIH judge
+            Welcome to SIH
           </h2>
 
           {/* Website Name & Subheading */}
