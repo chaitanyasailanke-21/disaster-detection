@@ -55,7 +55,7 @@ export const ArchitectureModal: React.FC<ArchitectureModalProps> = ({
             </div>
             <div>
               <h2 className="font-display font-bold text-slate-950 text-base tracking-wide">
-                AEGIS-X Prototype Architecture &amp; Decision Cascade
+                Prototype Architecture &amp; Decision Cascade
               </h2>
               <p className="text-xs text-slate-500 font-mono">
                 2 × ESP32-S3 + SX1262 LoRa ↔ Local Computer with LoRa Transceiver
@@ -78,7 +78,7 @@ export const ArchitectureModal: React.FC<ArchitectureModalProps> = ({
             <span>AUTHENTIC PHYSICAL PROTOTYPE ARCHITECTURE</span>
           </div>
           <p className="text-xs text-emerald-900 leading-relaxed font-sans">
-            The AEGIS-X field prototype operates 2 custom weather-resistant enclosures powered by <strong>ESP32-S3</strong> microcontrollers with <strong>Semtech SX1262 LoRa transceivers</strong>. They communicate directly with each other for neighbour corroboration, and communicate directly with a <strong>Local Computer Workstation featuring an integrated LoRa transceiver</strong> running offline evidence aggregation. (No external cloud or Raspberry Pi required).
+            The field prototype operates 2 custom weather-resistant enclosures powered by <strong>ESP32-S3</strong> microcontrollers with <strong>Semtech SX1262 LoRa transceivers</strong>. They communicate directly with each other for neighbour corroboration, and communicate directly with a <strong>Local Computer Workstation featuring an integrated LoRa transceiver</strong> running offline evidence aggregation. (No external cloud or Raspberry Pi required).
           </p>
         </div>
 

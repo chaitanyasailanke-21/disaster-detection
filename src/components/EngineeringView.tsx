@@ -40,7 +40,7 @@ export const EngineeringView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-slate-950 uppercase tracking-wide flex items-center gap-2">
             <Cpu className="w-5 h-5 text-sky-600" />
-            <span>AEGIS-X Engineering &amp; Physical Architecture</span>
+            <span>Engineering &amp; Physical Architecture</span>
           </h2>
           <p className="text-xs text-slate-600 mt-1">
             Physical hardware configuration: 2 × ESP32-S3 Field Nodes + Semtech SX1262 LoRa → Local Computer Command Center
@@ -61,7 +61,7 @@ export const EngineeringView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="font-bold text-sm text-slate-900">AEGIS-X NODE 01</span>
+                <span className="font-bold text-sm text-slate-900">NODE 01</span>
               </div>
               <span className="text-[11px] text-sky-700 font-mono font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                 ESP32-S3
@@ -157,7 +157,7 @@ export const EngineeringView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-amber-500" />
-                <span className="font-bold text-sm text-slate-900">AEGIS-X NODE 02</span>
+                <span className="font-bold text-sm text-slate-900">NODE 02</span>
               </div>
               <span className="text-[11px] text-amber-800 font-mono font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                 ESP32-S3

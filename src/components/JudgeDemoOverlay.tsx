@@ -87,7 +87,7 @@ export const JudgeDemoOverlay: React.FC<JudgeDemoOverlayProps> = ({
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-md rounded-xl px-3.5 py-1.5 flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 text-sky-700 font-bold">
             <Radio className="w-3.5 h-3.5 animate-pulse text-sky-600" />
-            <span className="font-display tracking-wider text-xs sm:text-sm">AEGIS-X</span>
+            <span className="font-display tracking-wider text-xs sm:text-sm">UNKNOWN SIX</span>
           </div>
           <span className="text-slate-300" aria-hidden="true">|</span>
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">

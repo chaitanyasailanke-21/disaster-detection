@@ -37,7 +37,7 @@ export const TimelineLog: React.FC = () => {
 
   const handleExportLog = () => {
     const exportData = {
-      project: 'AEGIS-X: Adaptive Cooperative Edge Intelligence & Safety Grid',
+      project: 'Unknown SIX: Adaptive Cooperative Edge Intelligence & Safety Grid',
       tagline: 'Evidence Before Escalation',
       exportedAt: new Date().toISOString(),
       disclaimer: 'SIMULATED DEMONSTRATION LOG — NOT FIELD VALIDATED',
@@ -67,7 +67,7 @@ export const TimelineLog: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aegis-x-decision-log-${Date.now()}.json`;
+    a.download = `decision-log-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

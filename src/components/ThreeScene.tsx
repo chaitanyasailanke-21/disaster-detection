@@ -305,9 +305,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
             setClickedObject({
               id: nId,
               name: nId === 'NODE-1' 
-                ? 'AEGIS-X Node 01 — Floodplain Station (Physical Prototype)' 
+                ? 'Node 01 — Floodplain Station (Physical Prototype)' 
                 : nId === 'NODE-2'
-                ? 'AEGIS-X Node 02 — Forest Boundary Station (Physical Prototype)'
+                ? 'Node 02 — Forest Boundary Station (Physical Prototype)'
                 : `${foundNode?.name || nId} (Virtual Scale Node)`,
               category: 'NODE',
               status: foundNode ? foundNode.state : 'ONLINE',
@@ -364,7 +364,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
               name: 'Western Escarpment Slope & Landslide Zone',
               category: 'HILLSIDE',
               status: simulationEngine.activeHazard?.type === 'LANDSLIDE' ? 'ACTIVE SLOPE COLLAPSE' : 'MONITORED STABLE',
-              details: 'Steep hill area composed of exposed soil, mud slip chutes, and fractured rock scree. Monitored by AEGIS-X tilt and seismic geophone sensors for slope failure.',
+              details: 'Steep hill area composed of exposed soil, mud slip chutes, and fractured rock scree. Monitored by tilt and seismic geophone sensors for slope failure.',
               position: [-10, 4.2, 14]
             });
             return;
@@ -1780,7 +1780,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
               ? 'bg-emerald-600 text-white font-bold'
               : 'text-slate-300 hover:text-white hover:bg-slate-800'
           }`}
-          title="Focus camera closely onto AEGIS-X physical node"
+          title="Focus camera closely onto physical node"
         >
           Node Focus
         </button>

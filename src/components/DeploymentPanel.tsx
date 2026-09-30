@@ -138,9 +138,9 @@ export const DeploymentPanel: React.FC = () => {
             <div className="text-slate-400 text-[9px]">Wasted in low-risk pastures</div>
           </div>
 
-          {/* AEGIS-X Targeted Grid */}
+          {/* Targeted Grid */}
           <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-300">
-            <div className="text-[10px] text-emerald-800 font-bold uppercase mb-0.5">AEGIS-X Plan</div>
+            <div className="text-[10px] text-emerald-800 font-bold uppercase mb-0.5">Targeted Plan</div>
             <div className="text-emerald-950 font-bold">12 Targeted Nodes</div>
             <div className="text-emerald-800 text-[10px]">Bottleneck corridors only</div>
             <div className="mt-1 text-emerald-700 font-bold text-[10px]">₹ 57,600 capital</div>

@@ -34,7 +34,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
         {/* Primary Project Title */}
         <h1 className="font-display font-bold text-4xl sm:text-6xl tracking-tight text-slate-950 mb-3">
-          AEGIS-X
+          Unknown SIX
         </h1>
 
         {/* Full Expanded Subtitle */}

@@ -305,9 +305,9 @@ export const JUDGE_DEMO_STEPS: DemoStep[] = [
     totalSteps: 9,
     phase: 'NATURAL EQUILIBRIUM',
     title: '1. Natural Daylight Baseline (Forest, River, Village)',
-    description: 'Bright realistic daylight across the 3D digital twin. Two physical AEGIS-X field nodes operate at 1.0 Hz baseline telemetry over SX1262 LoRa mesh.',
+    description: 'Bright realistic daylight across the 3D digital twin. Two physical field nodes operate at 1.0 Hz baseline telemetry over SX1262 LoRa mesh.',
     technicalDetail: 'Daylight equilibrium. Node 1 ultrasonic water baseline: 1.25m. Node 2 gas baseline: 16 ppm. Sensor trust: 95%. Hazard confidence: 0.05.',
-    aegisCallout: 'AEGIS-X: "Wide-area intelligence tells us WHERE to watch. Distributed edge nodes tell us WHAT is happening locally."',
+    aegisCallout: 'System: "Wide-area intelligence tells us WHERE to watch. Distributed edge nodes tell us WHAT is happening locally."',
     systemState: 'NORMAL',
     weather: 'CLEAR',
     cameraMode: 'COMMAND_CENTER',
@@ -338,7 +338,7 @@ export const JUDGE_DEMO_STEPS: DemoStep[] = [
     phase: 'ANOMALY DETECTED',
     title: '3. Node 01: Water Level Anomaly Detected',
     description: 'Node 1 HC-SR04 ultrasonic sensor detects rapid surge (3.45m). Optical rain sensor registers 68 mm/h.',
-    technicalDetail: 'Threshold crossed. Conventional systems declare immediate flood alarm. AEGIS-X isolates sensor hardware health before escalating.',
+    technicalDetail: 'Threshold crossed. Conventional systems declare immediate flood alarm. The system isolates sensor hardware health before escalating.',
     aegisCallout: 'Single sensor reading ≠ Automatic disaster. Evaluating sensor trust before escalating.',
     systemState: 'WATCH',
     weather: 'HEAVY_RAIN',
@@ -433,9 +433,9 @@ export const JUDGE_DEMO_STEPS: DemoStep[] = [
     totalSteps: 9,
     phase: 'TARGETED DEPLOYMENT',
     title: '9. Targeted Risk-Adaptive Deployment & Validation',
-    description: 'Camera pulls back to high aerial view. High-risk zones are highlighted. AEGIS-X places intelligence where risk and information value are highest — not everywhere.',
+    description: 'Camera pulls back to high aerial view. High-risk zones are highlighted. Targeted placement puts intelligence where risk and information value are highest — not everywhere.',
     technicalDetail: '2-Node Physical Prototype (ESP32-S3 + SX1262) validated. Targeted deployment eliminates wasteful dense grid sensing.',
-    aegisCallout: 'AEGIS-X: "Sense where risk is highest. Corroborate where evidence is uncertain. Evidence Before Escalation."',
+    aegisCallout: 'System: "Sense where risk is highest. Corroborate where evidence is uncertain. Evidence Before Escalation."',
     systemState: 'WARNING',
     weather: 'CLEAR',
     cameraMode: 'DEPLOYMENT_AERIAL',
@@ -512,7 +512,7 @@ export class SimulationEngine {
   private listeners: Set<() => void> = new Set();
 
   constructor() {
-    this.addLog('SYSTEM', 'AEGIS-X Initialized', '2 × ESP32-S3 Nodes + SX1262 LoRa → Local Computer Station with LoRa Transceiver online.', 'info');
+    this.addLog('SYSTEM', 'System Initialized', '2 × ESP32-S3 Nodes + SX1262 LoRa → Local Computer Station with LoRa Transceiver online.', 'info');
     this.recordConfidencePoint('Initial equilibrium');
   }
 
@@ -604,7 +604,7 @@ export class SimulationEngine {
     this.addLog(
       'DEPLOYMENT', 
       `Dense Grid vs Targeted Placement: ${this.isDenseGridComparisonActive ? 'ACTIVE' : 'OFF'}`, 
-      'Visually demonstrates AEGIS-X targeted placement vs wasteful uniform dense grid.',
+      'Visually demonstrates targeted placement vs wasteful uniform dense grid.',
       'info'
     );
     this.notify();
@@ -736,7 +736,7 @@ export class SimulationEngine {
           0.35,
           0.12,
           'NORMAL',
-          'AEGIS-X evidence cascade prevented false disaster evacuation. Sensor trust was below threshold.'
+          'Cooperative evidence cascade prevented false disaster evacuation. Sensor trust was below threshold.'
         );
         this.systemState = 'NORMAL';
         this.aggregatedHazardConfidence = 0.12;

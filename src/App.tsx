@@ -202,7 +202,7 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <Cpu className="w-4 h-4 text-emerald-400" />
                       <span className="font-bold text-slate-200">
-                        AEGIS-X Field Prototype Telemetry & Decision Cascade
+                        Field Prototype Telemetry & Decision Cascade
                       </span>
                     </div>
                     <button
@@ -226,7 +226,7 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <strong className="text-slate-200 tracking-wide">UNKNOWN SIX · AEGIS-X GRID</strong>
+                    <strong className="text-slate-200 tracking-wide">UNKNOWN SIX · EMERGENCY GRID</strong>
                   </span>
 
                   <span className="hidden sm:inline border-l border-slate-800 pl-3">

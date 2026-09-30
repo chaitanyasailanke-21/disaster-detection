@@ -70,7 +70,7 @@ export const EvidenceLedger: React.FC = () => {
           <HelpCircle className="w-4 h-4 text-sky-700 shrink-0" />
           <div>
             <div className="font-bold text-sky-950 text-xs">
-              WHY DID AEGIS-X REACH STATE: {systemState}?
+              WHY DID THE SYSTEM REACH STATE: {systemState}?
             </div>
             <div className="text-[11px] text-sky-800 leading-tight">
               Aggregated Hazard Confidence: <strong>{(currentConfidence * 100).toFixed(0)}%</strong>
@@ -92,7 +92,7 @@ export const EvidenceLedger: React.FC = () => {
           "Evidence Before Escalation" Decision Rule:
         </strong>
         Alerts require verified cross-node proof. If Node 1 experiences an isolated anomaly, 
-        AEGIS-X requests peer confirmation from Node 2 via LoRa before escalating to emergency services.
+        the system requests peer confirmation from Node 2 via LoRa before escalating to emergency services.
       </div>
 
       {/* Ledger Entries List */}
