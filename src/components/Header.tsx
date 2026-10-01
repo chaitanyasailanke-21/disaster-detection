@@ -21,13 +21,15 @@ interface HeaderProps {
   onToggleEngineeringView: () => void;
   onOpenArchitecture?: () => void;
   onOpenAssumptions?: () => void;
+  onOpenWelcome?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   isEngineeringView,
   onToggleEngineeringView,
   onOpenArchitecture,
-  onOpenAssumptions
+  onOpenAssumptions,
+  onOpenWelcome
 }) => {
   const [, setTick] = useState(0);
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
@@ -61,19 +63,23 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="h-13 border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-30 shrink-0 font-mono text-xs select-none">
       {/* Brand Identity */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/40 flex items-center justify-center text-sky-400 shadow-sm">
+      <button 
+        onClick={onOpenWelcome}
+        className="flex items-center gap-2.5 text-left group hover:opacity-90 transition-opacity cursor-pointer bg-transparent border-0 p-0"
+        title="View Welcome & Overview"
+      >
+        <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/40 group-hover:border-sky-400 flex items-center justify-center text-sky-400 shadow-sm transition-colors">
           <Radio className="w-3.5 h-3.5 animate-pulse" />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="font-display font-bold text-base tracking-wider text-slate-100 flex items-center gap-1.5">
+          <span className="font-display font-bold text-base tracking-wider text-slate-100 flex items-center gap-1.5 group-hover:text-amber-200 transition-colors">
             Unknown SIX
           </span>
           <span className="text-[10px] text-amber-300 font-semibold tracking-wider uppercase hidden md:inline border-l border-slate-700 pl-2">
             "Evidence Before Escalation"
           </span>
         </div>
-      </div>
+      </button>
 
       {/* System Status Indicators (Clean, concise) */}
       <div className="flex items-center gap-2 sm:gap-2.5">

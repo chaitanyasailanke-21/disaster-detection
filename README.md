@@ -1,4 +1,4 @@
-# AEGIS-X: Adaptive Cooperative Edge Intelligence & Safety Grid
+# Unknown SIX: Adaptive Cooperative Edge Intelligence & Safety Grid
 
 > **"Evidence Before Escalation"**
 >
@@ -15,7 +15,7 @@ $$\text{SENSE} \longrightarrow \text{SEND} \longrightarrow \text{ALERT}$$
 
 This results in high false-alarm rates caused by momentary electrical noise, sunlight glare on optical IR detectors, or localized non-hazardous spikes.
 
-**AEGIS-X replaces this with the Evidence Cascade:**
+**The Unknown SIX architecture replaces this with the Evidence Cascade:**
 $$\begin{aligned}
 \text{SENSE} &\longrightarrow \text{VALIDATE} \longrightarrow \text{CHECK SENSOR TRUST} \longrightarrow \text{DETECT ANOMALY} \\
 &\longrightarrow \text{ESTIMATE HAZARD CONFIDENCE} \longrightarrow \text{IF UNCERTAIN: RE-SENSE (Adaptive 5Hz)} \\
@@ -26,13 +26,13 @@ $$\begin{aligned}
 ### Key Principle
 > **"ONE SENSOR READING ≠ AUTOMATIC DISASTER"**
 >
-> AEGIS-X does not blindly trust a single sensor. It evaluates transducer health, initiates high-frequency adaptive re-sensing, requests corroborating evidence from adjacent nodes over LoRa, fuses the independent evidence, and escalates only when evidence justifies the decision.
+> The system does not blindly trust a single sensor. It evaluates transducer health, initiates high-frequency adaptive re-sensing, requests corroborating evidence from adjacent nodes over LoRa, fuses the independent evidence, and escalates only when evidence justifies the decision.
 
 ---
 
 ## 2. Real Physical Prototype Architecture
 
-The primary hardware architecture matches the physical AEGIS-X demonstrator:
+The primary hardware architecture matches the physical demonstrator:
 
 * **NODE 1 (Sector Alpha)**:
   * **Controller**: ESP32-S3 Dual-Core Xtensa microcontroller
@@ -56,7 +56,7 @@ The primary hardware architecture matches the physical AEGIS-X demonstrator:
 
 ## 3. Sensor Trust vs Hazard Confidence
 
-AEGIS-X enforces a strict separation between two independent values:
+The platform enforces a strict separation between two independent values:
 
 | Metric | Question It Answers | Example Values | Range |
 | :--- | :--- | :--- | :--- |
@@ -98,7 +98,7 @@ The simulation provides a dedicated **Chaos Suite**:
 
 ## 6. Future Network Scale (Concept Mode)
 
-While the physical prototype is strictly 2 nodes, AEGIS-X includes an optional **FUTURE SCALE** toggle:
+While the physical prototype is strictly 2 nodes, the system includes an optional **FUTURE SCALE** toggle:
 * **2 Nodes**: Primary physical prototype
 * **10 Nodes**: Campus / Village corridor
 * **50 Nodes**: Forest boundary & river basin

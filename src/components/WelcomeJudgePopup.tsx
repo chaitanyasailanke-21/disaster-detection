@@ -7,11 +7,10 @@ interface WelcomeJudgePopupProps {
 
 export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [secondsRemaining, setSecondsRemaining] = useState(5);
-  const totalDuration = 5;
+  const [secondsRemaining, setSecondsRemaining] = useState(8);
+  const totalDuration = 8;
 
   useEffect(() => {
-    // 5-second countdown timer
     const interval = setInterval(() => {
       setSecondsRemaining(prev => {
         if (prev <= 1) {
@@ -27,28 +26,30 @@ export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss 
     return () => clearInterval(interval);
   }, [onDismiss]);
 
+  const handleDismiss = () => {
+    setIsVisible(false);
+    if (onDismiss) onDismiss();
+  };
+
   if (!isVisible) return null;
 
   const progressPercent = ((totalDuration - secondsRemaining + 1) / totalDuration) * 100;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md transition-opacity duration-500 animate-fade-in pointer-events-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md transition-opacity duration-300 animate-fade-in pointer-events-auto"
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to Simulation"
     >
-      <div className="relative w-full max-w-lg bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-2xl p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-slate-100 font-sans overflow-hidden">
+      <div className="relative w-full max-w-lg bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-2xl p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.3)] text-slate-100 font-sans overflow-hidden">
         {/* Glowing top ambient light */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-500/20 blur-3xl pointer-events-none rounded-full" />
 
         {/* Close Button */}
         <button
-          onClick={() => {
-            setIsVisible(false);
-            if (onDismiss) onDismiss();
-          }}
-          className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
           title="Dismiss Welcome (Esc)"
         >
           <X className="w-4 h-4" />
@@ -80,8 +81,8 @@ export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss 
           {/* Key Quick Highlight Pills */}
           <div className="grid grid-cols-3 gap-2 w-full mb-5 font-mono text-[11px]">
             <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col items-center justify-center">
-              <span className="text-amber-400 font-bold">5 Sec</span>
-              <span className="text-slate-400 text-[10px]">Auto-Dismiss</span>
+              <span className="text-amber-400 font-bold">Physical</span>
+              <span className="text-slate-400 text-[10px]">ESP32-S3 Nodes</span>
             </div>
             <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col items-center justify-center">
               <span className="text-emerald-400 font-bold">Air Pollution</span>
@@ -94,13 +95,13 @@ export const WelcomeJudgePopup: React.FC<WelcomeJudgePopupProps> = ({ onDismiss 
           </div>
 
           {/* Countdown & Progress Indicator */}
-          <div className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div className="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
               <span className="flex items-center gap-1 text-amber-300 font-semibold">
                 <Sparkles className="w-3 h-3 text-amber-400" />
-                Closing in {secondsRemaining}s
+                Auto-closing in {secondsRemaining}s
               </span>
-              <span>Entering Simulation...</span>
+              <span>Click or Esc to start</span>
             </div>
             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
               <div 

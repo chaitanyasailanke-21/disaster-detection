@@ -46,6 +46,7 @@ export default function App() {
   const [isArchitectureOpen, setIsArchitectureOpen] = useState(false);
   const [isAssumptionsOpen, setIsAssumptionsOpen] = useState(false);
   const [isEngineeringView, setIsEngineeringView] = useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   // HERO EXPERIENCE: Sidebars & Bottom Panels are COLLAPSED BY DEFAULT!
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
@@ -73,6 +74,7 @@ export default function App() {
         onToggleEngineeringView={() => setIsEngineeringView(!isEngineeringView)}
         onOpenArchitecture={() => setIsArchitectureOpen(true)}
         onOpenAssumptions={() => setIsAssumptionsOpen(true)}
+        onOpenWelcome={() => setIsWelcomeOpen(true)}
       />
 
       {/* 2. Interactive Main Workspace — 3D Disaster Environment is HERO (85-90% attention) */}
@@ -146,15 +148,15 @@ export default function App() {
           </aside>
         )}
 
-        {/* Left Floating Trigger Pill (When Collapsed) */}
+        {/* Left Floating Trigger Pill (When Collapsed) - Placed cleanly above the camera toolbar */}
         {!isLeftPanelOpen && !isEngineeringView && (
-          <div className="absolute top-4 left-3 z-30 flex items-center gap-2">
+          <div className="absolute top-3.5 left-4 z-30 flex items-center gap-2">
             <button
               onClick={() => {
                 setActiveLeftTab('SCENARIOS');
                 setIsLeftPanelOpen(true);
               }}
-              className="bg-slate-900/90 hover:bg-slate-800 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg hover:border-sky-500"
+              className="bg-slate-900/90 hover:bg-slate-800 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg hover:border-sky-500 cursor-pointer"
               title="Open Disaster Scenarios & Controls"
             >
               <Sliders className="w-3.5 h-3.5 text-sky-400" />
@@ -167,7 +169,7 @@ export default function App() {
                 setActiveLeftTab('DEPLOYMENT');
                 setIsLeftPanelOpen(true);
               }}
-              className="bg-slate-900/90 hover:bg-slate-800 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg hover:border-purple-500"
+              className="bg-slate-900/90 hover:bg-slate-800 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg hover:border-purple-500 cursor-pointer"
               title="Open Risk-Adaptive Deployment Grid"
             >
               <MapPin className="w-3.5 h-3.5 text-purple-400" />
@@ -406,8 +408,10 @@ export default function App() {
         <AssumptionsModal onClose={() => setIsAssumptionsOpen(false)} />
       )}
 
-      {/* 5-second Welcome Popup for SIH Judge */}
-      <WelcomeJudgePopup />
+      {/* Welcome Popup */}
+      {isWelcomeOpen && (
+        <WelcomeJudgePopup onDismiss={() => setIsWelcomeOpen(false)} />
+      )}
     </div>
   );
 }

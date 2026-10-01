@@ -29,7 +29,9 @@ import {
   CheckCircle2,
   X,
   MapPin,
-  Sliders
+  Sliders,
+  RotateCw,
+  Move
 } from 'lucide-react';
 
 export interface ClickedObjectInfo {
@@ -57,6 +59,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [activeCameraView, setActiveCameraView] = useState<CameraMode>('FREE_CAMERA');
+  const [mouseMode, setMouseMode] = useState<'ROTATE' | 'MOVE'>('ROTATE');
   const [showControlsHint, setShowControlsHint] = useState<boolean>(true);
   const [clickedObject, setClickedObject] = useState<ClickedObjectInfo | null>(null);
 
@@ -74,7 +77,6 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const emberParticlesRef = useRef<THREE.Points | null>(null);
   const smokeParticlesRef = useRef<THREE.Points | null>(null);
   const rainParticlesRef = useRef<THREE.Points | null>(null);
-  const industrialSmokeRef = useRef<THREE.Points | null>(null);
   const pollutionSmokeRef = useRef<THREE.Points | null>(null);
   const landslideDebrisRef = useRef<THREE.Group | null>(null);
   const landslideDustParticlesRef = useRef<THREE.Points | null>(null);
@@ -102,6 +104,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const keysDownRef = useRef<{ [key: string]: boolean }>({});
   const isCinematicRunningRef = useRef<boolean>(false);
   const cinematicAngleRef = useRef<number>(0);
+  const isTransitioningRef = useRef<boolean>(false);
 
   // Auto-dismiss keyboard hint after 8 seconds
   useEffect(() => {
@@ -116,6 +119,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (!controlsRef.current) return;
 
     isCinematicRunningRef.current = (mode === 'CINEMATIC' || mode === 'DISASTER_CINEMATIC');
+    isTransitioningRef.current = !isCinematicRunningRef.current;
 
     switch (mode) {
       case 'COMMAND_CENTER':
@@ -172,6 +176,33 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
   }, [switchCameraMode, activeCameraView]);
 
+  // Sync mouse interaction mode with OrbitControls
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    const ctrl = controlsRef.current;
+    if (mouseMode === 'ROTATE') {
+      ctrl.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN
+      };
+      ctrl.touches = {
+        ONE: THREE.TOUCH.ROTATE,
+        TWO: THREE.TOUCH.DOLLY_PAN
+      };
+    } else {
+      ctrl.mouseButtons = {
+        LEFT: THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE
+      };
+      ctrl.touches = {
+        ONE: THREE.TOUCH.PAN,
+        TWO: THREE.TOUCH.DOLLY_PAN
+      };
+    }
+  }, [mouseMode]);
+
   // Main Three.js Setup Effect
   useEffect(() => {
     if (!mountRef.current) return;
@@ -204,11 +235,42 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     // 4. FULL 360-DEGREE ORBIT & GAME CAMERA CONTROLS
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
+    controls.dampingFactor = 0.08;
     controls.maxPolarAngle = Math.PI / 2.05; // Prevent camera dipping below terrain
     controls.minDistance = 2.0;
-    controls.maxDistance = 120;
+    controls.maxDistance = 140;
+    controls.rotateSpeed = 0.9;
+    controls.panSpeed = 1.0;
+    controls.screenSpacePanning = true;
     controls.target.set(0, 1.5, 0);
+
+    controls.mouseButtons = {
+      LEFT: mouseMode === 'ROTATE' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: mouseMode === 'ROTATE' ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE
+    };
+    controls.touches = {
+      ONE: mouseMode === 'ROTATE' ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
+
+    controls.addEventListener('start', () => {
+      isTransitioningRef.current = false;
+      isCinematicRunningRef.current = false;
+      setActiveCameraView('FREE_CAMERA');
+    });
+
+    controls.addEventListener('change', () => {
+      targetCamPosRef.current.copy(camera.position);
+      targetLookAtRef.current.copy(controls.target);
+    });
+
+    controls.addEventListener('end', () => {
+      isTransitioningRef.current = false;
+      targetCamPosRef.current.copy(camera.position);
+      targetLookAtRef.current.copy(controls.target);
+    });
+
     controlsRef.current = controls;
 
     // 5. BRIGHT REALISTIC DAYLIGHT SUITE
@@ -252,10 +314,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     buildDenseForestZone(scene);
     buildRealisticRiverAndBridge(scene);
     buildDetailedVillage(scene);
-    buildIndustrialPollutionZone(scene);
     buildHillsideLandslideZone(scene);
     buildPrototypeFieldNodes(scene);
-    buildLoRaRFConnections(scene);
     buildDisasterParticles(scene);
     buildRiskHeatmapLayers(scene);
     buildTraditionalDenseGridMesh(scene);
@@ -274,10 +334,20 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         setActiveCameraView('FREE_CAMERA');
         setClickedObject(null);
       }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        if (controlsRef.current) {
+          controlsRef.current.mouseButtons.LEFT = (mouseMode === 'ROTATE' ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE);
+        }
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       keysDownRef.current[e.code] = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        if (controlsRef.current) {
+          controlsRef.current.mouseButtons.LEFT = (mouseMode === 'ROTATE' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN);
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -286,8 +356,16 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     // 8. RAYCASTER FOR INTERACTIVE CLICKING & DOUBLE-CLICK FOCUS
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let mouseDownPos = { x: 0, y: 0 };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+    };
 
     const handleClick = (e: MouseEvent) => {
+      const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
+      if (dist > 6) return; // User dragged to rotate or move, not a point click
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -385,11 +463,13 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (intersects.length > 0) {
         const point = intersects[0].point;
         targetLookAtRef.current.copy(point);
-        const offset = new THREE.Vector3().subVectors(camera.position, controls.target).normalize().multiplyScalar(10);
+        const offset = new THREE.Vector3().subVectors(camera.position, controls.target).normalize().multiplyScalar(12);
         targetCamPosRef.current.copy(point).add(offset);
+        isTransitioningRef.current = true;
       }
     };
 
+    renderer.domElement.addEventListener('mousedown', handleMouseDown);
     renderer.domElement.addEventListener('click', handleClick);
     renderer.domElement.addEventListener('dblclick', handleDoubleClick);
 
@@ -419,6 +499,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const hasWASD = keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'] || keys['KeyQ'] || keys['KeyE'];
       if (hasWASD) {
         isCinematicRunningRef.current = false;
+        isTransitioningRef.current = false;
         setActiveCameraView('FREE_CAMERA');
         const moveSpeed = (keys['ShiftLeft'] || keys['ShiftRight'] ? 36.0 : 16.0) * dt;
 
@@ -443,13 +524,19 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         const cx = Math.sin(cinematicAngleRef.current) * rad;
         const cz = Math.cos(cinematicAngleRef.current) * rad;
         const cy = 18.0 + Math.sin(cinematicAngleRef.current * 0.6) * 6.0;
-        targetCamPosRef.current.set(cx, cy, cz);
-        targetLookAtRef.current.set(0, 1.8, 0);
+        camera.position.set(cx, cy, cz);
+        controls.target.set(0, 1.8, 0);
+        targetCamPosRef.current.copy(camera.position);
+        targetLookAtRef.current.copy(controls.target);
+      } else if (isTransitioningRef.current) {
+        camera.position.lerp(targetCamPosRef.current, 0.08);
+        controls.target.lerp(targetLookAtRef.current, 0.08);
+        if (camera.position.distanceTo(targetCamPosRef.current) < 0.15 &&
+            controls.target.distanceTo(targetLookAtRef.current) < 0.15) {
+          isTransitioningRef.current = false;
+        }
       }
 
-      // Smooth camera interpolation
-      camera.position.lerp(targetCamPosRef.current, 0.05);
-      controls.target.lerp(targetLookAtRef.current, 0.05);
       controls.update();
 
       // Update dynamic layers (Water, particles, daylight lighting, packets, risk heatmap)
@@ -616,15 +703,18 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     scene.add(terrain);
     terrainMeshRef.current = terrain;
 
-    // Scattered natural boulders & rocks across lowlands
+    // Scattered natural boulders & rocks across lowlands - firmly planted on the land
     const rockMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.88, flatShading: true });
     for (let r = 0; r < 24; r++) {
       const rx = (Math.random() - 0.5) * 60;
       const rz = (Math.random() - 0.5) * 60;
       if (Math.abs(rx - 13) < 4 || Math.abs(rx) < 5 || (rx < -2 && rz > 2)) continue;
-      const rockGeo = new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.5);
+      const rockRadius = 0.35 + Math.random() * 0.5;
+      const rockGeo = new THREE.DodecahedronGeometry(rockRadius);
       const rockMesh = new THREE.Mesh(rockGeo, rockMat);
-      rockMesh.position.set(rx, 0.4 + Math.random() * 0.4, rz);
+      const groundY = getMountainTerrainElevation(rx, rz);
+      // Rock center adjusted so the bottom sits firmly in and on the land
+      rockMesh.position.set(rx, groundY + rockRadius * 0.45, rz);
       rockMesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
       rockMesh.castShadow = true;
       rockMesh.receiveShadow = true;
@@ -683,7 +773,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         tree.add(tier3);
       }
 
-      tree.position.set(tx, 0.35, tz);
+      // Root tree base firmly on the exact terrain ground elevation
+      const groundY = getMountainTerrainElevation(tx, tz);
+      tree.position.set(tx, groundY - 0.05, tz);
       forest.add(tree);
     }
     scene.add(forest);
@@ -736,66 +828,322 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     const village = new THREE.Group();
     village.name = 'villageZone';
 
-    const wallMat1 = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 });
-    const wallMat2 = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.65 });
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.8 }); // Red tile roofs
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+    // Materials
+    const wallMat1 = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.65 }); // Clean white render
+    const wallMat2 = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.70 }); // Warm country cream
+    const wallMat3 = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.75 }); // Sandstone / fieldstone
+    const wallTimber = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.85 }); // Dark timber framing
+    const roofRed = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.75 }); // Terracotta tile roof
+    const roofSlate = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.70 }); // Grey slate roof
+    const roofShake = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 }); // Cedar wood shakes
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 }); // Main paved street
     roadMaterialRef.current = roadMat;
+    const pathMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.90 }); // Gravel walking path
+    const windowMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xfde047,
+      emissiveIntensity: 0.45,
+      roughness: 0.2
+    });
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x5c2f16, roughness: 0.8 });
+    const chimneyMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+    const fenceMat = new THREE.MeshStandardMaterial({ color: 0x713f12, roughness: 0.9 });
+    const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.9 });
+    const foliageMat1 = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8, flatShading: true });
+    const foliageMat2 = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.8, flatShading: true });
 
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 32), roadMat);
-    road.rotateX(-Math.PI / 2);
-    road.position.set(17, 0.05, 14);
-    road.receiveShadow = true;
-    village.add(road);
+    // 1. VILLAGE ROADS & PEDESTRIAN PROMENADE (SAFELY SETBACK FROM RIVER)
+    // A. Main Village Avenue (North-South through heart of expanded village)
+    const mainAvenue = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 29), roadMat);
+    mainAvenue.rotateX(-Math.PI / 2);
+    mainAvenue.position.set(28.5, 0.06, 8.5);
+    mainAvenue.receiveShadow = true;
+    village.add(mainAvenue);
 
-    const houses = [
-      { x: 13.5, z: 9, w: 3.2, d: 2.8, h: 2.6, mat: wallMat1 },
-      { x: 20.5, z: 8.5, w: 3.6, d: 3.2, h: 3.0, mat: wallMat2 },
-      { x: 13.5, z: 15.5, w: 3.4, d: 3.0, h: 2.8, mat: wallMat1 },
-      { x: 20.8, z: 15, w: 3.2, d: 3.4, h: 2.8, mat: wallMat2 },
-      { x: 14.0, z: 21, w: 3.0, d: 2.8, h: 2.5, mat: wallMat1 }
+    // B. Bridge Connector Road (Branches east from bridge exit at x=19.25 into the village main avenue)
+    const bridgeConnector = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 3.8), roadMat);
+    bridgeConnector.rotateX(-Math.PI / 2);
+    bridgeConnector.position.set(23.9, 0.06, -6.0);
+    bridgeConnector.receiveShadow = true;
+    village.add(bridgeConnector);
+
+    // C. Cross Street (East-West link through village center)
+    const crossStreet = new THREE.Mesh(new THREE.PlaneGeometry(10.0, 3.2), roadMat);
+    crossStreet.rotateX(-Math.PI / 2);
+    crossStreet.position.set(28.5, 0.06, 8.5);
+    crossStreet.receiveShadow = true;
+    village.add(crossStreet);
+
+    // D. Scenic Riverbank Walking Promenade (Paved walking path inside green buffer)
+    const riverPath = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 27), pathMat);
+    riverPath.rotateX(-Math.PI / 2);
+    riverPath.position.set(23.2, 0.05, 8.5);
+    riverPath.receiveShadow = true;
+    village.add(riverPath);
+
+    // 2. RUSTIC RIVERBANK FENCE & BUFFER PARKLAND (Delineates safe village from river floodplain)
+    // River edge ends at x=19.5; Fence stands along x=21.8 providing visible clear safety boundary
+    for (let fz = -5.0; fz <= 22.0; fz += 3.4) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 1.1, 6), fenceMat);
+      const postY = getMountainTerrainElevation(21.8, fz);
+      post.position.set(21.8, postY + 0.55, fz);
+      post.castShadow = true;
+      village.add(post);
+
+      // Horizontal rails
+      if (fz < 21.0) {
+        [0.35, 0.75].forEach(railH => {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 3.4), fenceMat);
+          rail.position.set(21.8, postY + railH, fz + 1.7);
+          rail.castShadow = true;
+          village.add(rail);
+        });
+      }
+    }
+
+    // Riverside Park Benches
+    [1.0, 14.0].forEach(bz => {
+      const benchGroup = new THREE.Group();
+      const benchSeat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 1.4), fenceMat);
+      benchSeat.position.set(0, 0.45, 0);
+      const benchBack = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 1.4), fenceMat);
+      benchBack.position.set(-0.25, 0.75, 0);
+      benchGroup.add(benchSeat);
+      benchGroup.add(benchBack);
+      const bY = getMountainTerrainElevation(23.0, bz);
+      benchGroup.position.set(23.0, bY, bz);
+      village.add(benchGroup);
+    });
+
+    // Riverside Ornamental Flowering & Birch Trees along the green buffer
+    [
+      { x: 23.0, z: -3.0, s: 0.8 },
+      { x: 22.8, z: 6.0,  s: 0.9 },
+      { x: 23.0, z: 11.5, s: 0.85 },
+      { x: 22.8, z: 17.5, s: 0.95 }
+    ].forEach((tPos, tIdx) => {
+      const tree = new THREE.Group();
+      const s = tPos.s;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * s, 0.18 * s, 1.8 * s, 6), treeTrunkMat);
+      trunk.position.y = 0.9 * s;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const foliageMat = tIdx % 2 === 0 ? foliageMat1 : foliageMat2;
+      const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2 * s, 1), foliageMat);
+      crown.position.y = 2.1 * s;
+      crown.castShadow = true;
+      tree.add(crown);
+
+      const gY = getMountainTerrainElevation(tPos.x, tPos.z);
+      tree.position.set(tPos.x, gY - 0.05, tPos.z);
+      village.add(tree);
+    });
+
+    // 3. VILLAGE PLAZA & CENTRAL STONE FOUNTAIN (x=28.5, z=8.5)
+    const plazaCenter = { x: 28.5, z: 8.5 };
+    const plazaY = getMountainTerrainElevation(plazaCenter.x, plazaCenter.z);
+
+    // Stone Apron
+    const plazaMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.6, 3.6, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 })
+    );
+    plazaMesh.position.set(plazaCenter.x, plazaY + 0.04, plazaCenter.z);
+    plazaMesh.receiveShadow = true;
+    village.add(plazaMesh);
+
+    // Tiered Stone Fountain
+    const fountainGroup = new THREE.Group();
+    const basin = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.5, 1.6, 0.45, 12),
+      chimneyMat
+    );
+    basin.position.y = 0.22;
+    fountainGroup.add(basin);
+
+    const fWater = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.35, 1.35, 0.05, 12),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.8 })
+    );
+    fWater.position.y = 0.42;
+    fountainGroup.add(fWater);
+
+    const fSpire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.35, 1.3, 8),
+      chimneyMat
+    );
+    fSpire.position.y = 0.85;
+    fountainGroup.add(fSpire);
+
+    fountainGroup.position.set(plazaCenter.x, plazaY, plazaCenter.z);
+    village.add(fountainGroup);
+
+    // Decorative Street Lanterns around plaza
+    [
+      { dx: -2.4, dz: -2.4 },
+      { dx: 2.4,  dz: -2.4 },
+      { dx: -2.4, dz: 2.4 },
+      { dx: 2.4,  dz: 2.4 }
+    ].forEach(lp => {
+      const lx = plazaCenter.x + lp.dx;
+      const lz = plazaCenter.z + lp.dz;
+      const ly = getMountainTerrainElevation(lx, lz);
+
+      const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 2.2, 6), fenceMat);
+      lampPole.position.set(lx, ly + 1.1, lz);
+      village.add(lampPole);
+
+      const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.35, 0.24), windowMat);
+      lantern.position.set(lx, ly + 2.1, lz);
+      village.add(lantern);
+    });
+
+    // 4. EXPANDED VILLAGE HOUSES (9 DISTINCT HOMES WITH SAFE RIVER CLEARANCE)
+    // West lane houses are at x=25.2 to 25.5 (generous 5.7m - 8m distance from river edge x=19.5!)
+    // East lane houses are at x=31.8 to 32.2 (12m+ from river)
+    interface VillageHouseDef {
+      x: number;
+      z: number;
+      w: number;
+      d: number;
+      h: number;
+      wallMat: THREE.Material;
+      roofMat: THREE.Material;
+      roofType: 'gable' | 'hip' | 'hall';
+      chimneySide: 'left' | 'right' | 'none';
+      hasPorch?: boolean;
+      hasAwning?: boolean;
+    }
+
+    const houses: VillageHouseDef[] = [
+      // WEST ROW (Riverview Lane - spaced safely setback from the water)
+      { x: 25.5, z: -2.0, w: 3.4, d: 2.8, h: 2.6, wallMat: wallMat1, roofMat: roofSlate,   roofType: 'gable', chimneySide: 'left',  hasPorch: true },
+      { x: 25.2, z: 3.8,  w: 3.8, d: 3.4, h: 3.2, wallMat: wallMat2, roofMat: roofRed,     roofType: 'hip',   chimneySide: 'right', hasPorch: true },
+      { x: 25.4, z: 13.0, w: 3.5, d: 3.0, h: 2.8, wallMat: wallMat3, roofMat: roofShake,   roofType: 'gable', chimneySide: 'left' },
+      { x: 25.2, z: 17.5, w: 3.4, d: 2.8, h: 2.6, wallMat: wallMat1, roofMat: roofRed,     roofType: 'gable', chimneySide: 'right' },
+      { x: 25.5, z: 22.0, w: 3.6, d: 3.2, h: 2.9, wallMat: wallMat2, roofMat: roofSlate,   roofType: 'hip',   chimneySide: 'left' },
+
+      // EAST ROW (Foothill Avenue - expanded community buildings and family residences)
+      { x: 32.2, z: -2.0, w: 4.8, d: 3.8, h: 3.6, wallMat: wallTimber, roofMat: roofSlate, roofType: 'hall',  chimneySide: 'none',  hasPorch: true },
+      { x: 31.8, z: 3.8,  w: 3.6, d: 3.2, h: 3.0, wallMat: wallMat1,   roofMat: roofRed,   roofType: 'gable', chimneySide: 'right' },
+      { x: 32.0, z: 13.0, w: 4.0, d: 3.4, h: 3.2, wallMat: wallMat2,   roofMat: roofRed,   roofType: 'gable', chimneySide: 'left',  hasAwning: true },
+      { x: 31.8, z: 18.0, w: 3.8, d: 3.4, h: 3.1, wallMat: wallMat3,   roofMat: roofShake, roofType: 'hip',   chimneySide: 'right' }
     ];
 
     houses.forEach(h => {
       const houseGroup = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(h.w, h.h, h.d), h.mat);
+
+      // Main House Body
+      const body = new THREE.Mesh(new THREE.BoxGeometry(h.w, h.h, h.d), h.wallMat);
       body.position.y = h.h / 2;
       body.castShadow = true;
       body.receiveShadow = true;
       houseGroup.add(body);
 
-      const roofGeo = new THREE.ConeGeometry(Math.max(h.w, h.d) * 0.75, 1.4, 4);
-      roofGeo.rotateY(Math.PI / 4);
-      const roof = new THREE.Mesh(roofGeo, roofMat);
-      roof.position.y = h.h + 0.7;
-      roof.castShadow = true;
-      houseGroup.add(roof);
+      // Roof Construction
+      if (h.roofType === 'hall') {
+        // Village Community Hall Roof with steep pitch & central clock cupola
+        const roofGeo = new THREE.ConeGeometry(Math.max(h.w, h.d) * 0.72, 1.8, 4);
+        roofGeo.rotateY(Math.PI / 4);
+        const roof = new THREE.Mesh(roofGeo, h.roofMat);
+        roof.position.y = h.h + 0.9;
+        roof.castShadow = true;
+        houseGroup.add(roof);
 
-      houseGroup.position.set(h.x, 0.05, h.z);
+        // Community Clock / Bell Cupola
+        const cupola = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.9), wallMat1);
+        cupola.position.y = h.h + 1.9;
+        cupola.castShadow = true;
+        houseGroup.add(cupola);
+
+        const steeple = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 4), roofRed);
+        steeple.rotateY(Math.PI / 4);
+        steeple.position.y = h.h + 2.9;
+        steeple.castShadow = true;
+        houseGroup.add(steeple);
+      } else if (h.roofType === 'hip') {
+        const roofGeo = new THREE.ConeGeometry(Math.max(h.w, h.d) * 0.74, 1.5, 4);
+        roofGeo.rotateY(Math.PI / 4);
+        const roof = new THREE.Mesh(roofGeo, h.roofMat);
+        roof.position.y = h.h + 0.75;
+        roof.castShadow = true;
+        houseGroup.add(roof);
+      } else {
+        // Gabled Roof
+        const roofGeo = new THREE.ConeGeometry(Math.max(h.w, h.d) * 0.72, 1.4, 4);
+        roofGeo.rotateY(Math.PI / 4);
+        const roof = new THREE.Mesh(roofGeo, h.roofMat);
+        roof.position.y = h.h + 0.7;
+        roof.castShadow = true;
+        houseGroup.add(roof);
+      }
+
+      // Front Wooden Door
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.08), doorMat);
+      door.position.set(0, 0.7, h.d / 2 + 0.04);
+      houseGroup.add(door);
+
+      // Warm Glowing Windows
+      [-(h.w * 0.28), h.w * 0.28].forEach(wx => {
+        // Ground floor window
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.7, 0.08), windowMat);
+        win.position.set(wx, 1.2, h.d / 2 + 0.04);
+        houseGroup.add(win);
+
+        // Upper floor window (if 2-story)
+        if (h.h >= 3.0) {
+          const winUp = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.6, 0.08), windowMat);
+          winUp.position.set(wx, 2.3, h.d / 2 + 0.04);
+          houseGroup.add(winUp);
+        }
+
+        // Side window
+        const sideWin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.65, 0.65), windowMat);
+        sideWin.position.set(h.w / 2 + 0.04, 1.2, 0);
+        houseGroup.add(sideWin);
+      });
+
+      // Stone Chimney
+      if (h.chimneySide !== 'none') {
+        const cx = (h.chimneySide === 'left' ? -1 : 1) * (h.w * 0.3);
+        const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.4, 0.45), chimneyMat);
+        chimney.position.set(cx, h.h + 0.9, 0);
+        chimney.castShadow = true;
+        houseGroup.add(chimney);
+      }
+
+      // Front Porch Canopy (for select homes)
+      if (h.hasPorch) {
+        const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.9), h.roofMat);
+        porchRoof.position.set(0, 1.7, h.d / 2 + 0.48);
+        porchRoof.castShadow = true;
+        houseGroup.add(porchRoof);
+
+        [-0.6, 0.6].forEach(px => {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.7, 6), fenceMat);
+          post.position.set(px, 0.85, h.d / 2 + 0.85);
+          houseGroup.add(post);
+        });
+      }
+
+      // Village Store Front Awning
+      if (h.hasAwning) {
+        const awningMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+        const awning = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 1.1), awningMat);
+        awning.rotation.x = Math.PI / 10;
+        awning.position.set(0, 1.8, h.d / 2 + 0.55);
+        awning.castShadow = true;
+        houseGroup.add(awning);
+      }
+
+      // Firmly plant on exact terrain elevation
+      const groundY = getMountainTerrainElevation(h.x, h.z);
+      houseGroup.position.set(h.x, groundY, h.z);
       village.add(houseGroup);
     });
 
     scene.add(village);
-  }
-
-  function buildIndustrialPollutionZone(scene: THREE.Scene) {
-    const industrial = new THREE.Group();
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5, metalness: 0.6 });
-    const stackMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4, metalness: 0.8 });
-
-    const warehouse = new THREE.Mesh(new THREE.BoxGeometry(5.0, 3.8, 4.2), steelMat);
-    warehouse.position.set(18, 1.9, 24);
-    warehouse.castShadow = true;
-    industrial.add(warehouse);
-
-    [16.8, 19.2].forEach(sx => {
-      const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 6.0, 12), stackMat);
-      stack.position.set(sx, 4.0, 24);
-      stack.castShadow = true;
-      industrial.add(stack);
-    });
-
-    scene.add(industrial);
   }
 
   function buildHillsideLandslideZone(scene: THREE.Scene) {
@@ -894,9 +1242,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       f3.castShadow = true;
       tree.add(f3);
 
-      // EXACT GROUND PLACEMENT: Bottom of trunk is at local y = 0, so group sits right on the land!
+      // EXACT GROUND PLACEMENT: Bottom of trunk firmly planted on the land
       const groundY = getMountainTerrainElevation(pt.x, pt.z);
-      tree.position.set(pt.x, groundY, pt.z);
+      tree.position.set(pt.x, groundY - 0.06, pt.z);
       tree.rotation.z = -0.12; // Natural mountain wind lean
       hillsideGroup.add(tree);
     });
@@ -928,14 +1276,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       tree.add(f2);
 
       const groundY = getMountainTerrainElevation(pt.x, pt.z);
-      tree.position.set(pt.x, groundY, pt.z);
+      tree.position.set(pt.x, groundY - 0.06, pt.z);
       tree.rotation.z = -0.12;
       hillsideGroup.add(tree);
 
       slidingTreesRef.current.push({
         tree,
         baseX: pt.x,
-        baseY: groundY,
+        baseY: groundY - 0.06,
         baseZ: pt.z
       });
     });
@@ -950,7 +1298,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   function buildPrototypeFieldNodes(scene: THREE.Scene) {
     simulationEngine.prototypeNodes.forEach(node => {
       const nodeGroup = new THREE.Group();
-      nodeGroup.position.set(node.position[0], node.position[1], node.position[2]);
+      const groundY = getMountainTerrainElevation(node.position[0], node.position[2]);
+      nodeGroup.position.set(node.position[0], groundY, node.position[2]);
       nodeGroup.userData = { nodeId: node.id };
 
       const mastMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.3 });
@@ -1150,46 +1499,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   }
 
   // Draw LoRa links: Peer-to-peer and direct uplinks
-  function buildLoRaRFConnections(scene: THREE.Scene) {
-    const linksGroup = new THREE.Group();
-    linksGroup.name = 'loraLinks';
-
-    const pcPos = new THREE.Vector3(LOCAL_COMPUTER_POSITION[0], LOCAL_COMPUTER_POSITION[1], LOCAL_COMPUTER_POSITION[2]).add(new THREE.Vector3(0.9, 4.0, 0.1));
-    const n1Pos = new THREE.Vector3(14, 2.1, -6);
-    const n2Pos = new THREE.Vector3(-16, 2.3, -12);
-
-    const uplinkMat = new THREE.LineDashedMaterial({
-      color: 0x0284c7,
-      dashSize: 0.8,
-      gapSize: 0.5,
-      transparent: true,
-      opacity: 0.4
-    });
-
-    const peerMat = new THREE.LineDashedMaterial({
-      color: 0x9333ea,
-      dashSize: 0.7,
-      gapSize: 0.4,
-      transparent: true,
-      opacity: 0.5
-    });
-
-    const g1 = new THREE.BufferGeometry().setFromPoints([n1Pos, pcPos]);
-    const l1 = new THREE.Line(g1, uplinkMat);
-    l1.computeLineDistances();
-    linksGroup.add(l1);
-
-    const g2 = new THREE.BufferGeometry().setFromPoints([n2Pos, pcPos]);
-    const l2 = new THREE.Line(g2, uplinkMat);
-    l2.computeLineDistances();
-    linksGroup.add(l2);
-
-    const g3 = new THREE.BufferGeometry().setFromPoints([n1Pos, n2Pos]);
-    const l3 = new THREE.Line(g3, peerMat);
-    l3.computeLineDistances();
-    linksGroup.add(l3);
-
-    scene.add(linksGroup);
+  function buildLoRaRFConnections(_scene: THREE.Scene) {
+    // Removed dashed line rendering that generated floating dot artifacts in the air.
+    // In-flight LoRa packets dynamically animate message transmissions between active nodes.
   }
 
   function buildDisasterParticles(scene: THREE.Scene) {
@@ -1212,6 +1524,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       depthWrite: false
     });
     const firePoints = new THREE.Points(fireGeo, fireMat);
+    firePoints.visible = false;
     scene.add(firePoints);
     fireParticlesRef.current = firePoints;
 
@@ -1234,6 +1547,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       depthWrite: false
     });
     const emberPoints = new THREE.Points(emberGeo, emberMat);
+    emberPoints.visible = false;
     scene.add(emberPoints);
     emberParticlesRef.current = emberPoints;
 
@@ -1255,6 +1569,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       depthWrite: false
     });
     const smokePoints = new THREE.Points(smokeGeo, smokeMat);
+    smokePoints.visible = false;
     scene.add(smokePoints);
     smokeParticlesRef.current = smokePoints;
 
@@ -1275,31 +1590,11 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       opacity: 0
     });
     const rainPoints = new THREE.Points(rainGeo, rainMat);
+    rainPoints.visible = false;
     scene.add(rainPoints);
     rainParticlesRef.current = rainPoints;
 
-    // 5. Industrial Stack Emissions
-    const indCount = 160;
-    const indGeo = new THREE.BufferGeometry();
-    const indPos = new Float32Array(indCount * 3);
-    for (let i = 0; i < indCount * 3; i += 3) {
-      indPos[i] = 18 + (Math.random() - 0.5) * 2;
-      indPos[i + 1] = 7.0 + Math.random() * 6.5;
-      indPos[i + 2] = 24 + (Math.random() - 0.5) * 2;
-    }
-    indGeo.setAttribute('position', new THREE.BufferAttribute(indPos, 3));
-    const indMat = new THREE.PointsMaterial({
-      color: 0x78716c,
-      size: 1.1,
-      transparent: true,
-      opacity: 0.35,
-      depthWrite: false
-    });
-    const indPoints = new THREE.Points(indGeo, indMat);
-    scene.add(indPoints);
-    industrialSmokeRef.current = indPoints;
-
-    // 6. Air Pollution & Toxic Smoke Plume System (drifting directly into Node 2 sensor station)
+    // 5. Air Pollution & Toxic Smoke Plume System (drifting directly into Node 2 sensor station)
     const pollutionCount = 650;
     const pollutionGeo = new THREE.BufferGeometry();
     const pollutionPos = new Float32Array(pollutionCount * 3);
@@ -1317,6 +1612,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       depthWrite: false
     });
     const pollutionPoints = new THREE.Points(pollutionGeo, pollutionMat);
+    pollutionPoints.visible = false;
     scene.add(pollutionPoints);
     pollutionSmokeRef.current = pollutionPoints;
 
@@ -1338,6 +1634,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       depthWrite: false
     });
     const slideDustPoints = new THREE.Points(slideDustGeo, slideDustMat);
+    slideDustPoints.visible = false;
     scene.add(slideDustPoints);
     landslideDustParticlesRef.current = slideDustPoints;
   }
@@ -1440,6 +1737,10 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     // 3. FOREST FIRE & EMBER INTENSITY
     const isFire = hazard?.type === 'FOREST_FIRE';
     if (fireParticlesRef.current && smokeParticlesRef.current && fireLightRef.current && emberParticlesRef.current) {
+      fireParticlesRef.current.visible = isFire;
+      emberParticlesRef.current.visible = isFire;
+      smokeParticlesRef.current.visible = isFire;
+
       const fireMat = fireParticlesRef.current.material as THREE.PointsMaterial;
       const emberMat = emberParticlesRef.current.material as THREE.PointsMaterial;
       const smokeMat = smokeParticlesRef.current.material as THREE.PointsMaterial;
@@ -1484,8 +1785,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     // 4. RAIN PARTICLES
     if (rainParticlesRef.current) {
-      const rainMat = rainParticlesRef.current.material as THREE.PointsMaterial;
       const isRaining = weather === 'RAIN' || weather === 'HEAVY_RAIN' || weather === 'STORM';
+      rainParticlesRef.current.visible = isRaining;
+      const rainMat = rainParticlesRef.current.material as THREE.PointsMaterial;
       const targetRainOpacity = isRaining ? 0.75 : 0;
       rainMat.opacity = THREE.MathUtils.lerp(rainMat.opacity, targetRainOpacity, 0.08);
 
@@ -1504,6 +1806,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     // 4b. AIR POLLUTION & DENSE SMOKE PLUME DYNAMICS (Detected by Node 2)
     const isAirPollution = hazard?.type === 'AIR_QUALITY_EVENT';
     if (pollutionSmokeRef.current) {
+      pollutionSmokeRef.current.visible = isAirPollution;
       const pMat = pollutionSmokeRef.current.material as THREE.PointsMaterial;
       const targetPollutionOpacity = isAirPollution ? 0.85 : 0;
       pMat.opacity = THREE.MathUtils.lerp(pMat.opacity, targetPollutionOpacity, 0.06);
@@ -1590,6 +1893,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     // 3. Animate billowing dust & rushing debris along the slide track
     if (landslideDustParticlesRef.current) {
+      landslideDustParticlesRef.current.visible = isLandslide;
       const dMat = landslideDustParticlesRef.current.material as THREE.PointsMaterial;
       const targetDustOpacity = isLandslide ? 0.80 : 0;
       dMat.opacity = THREE.MathUtils.lerp(dMat.opacity, targetDustOpacity, 0.08);
@@ -1743,10 +2047,13 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   return (
     <div className="relative w-full h-full select-none overflow-hidden font-mono">
       {/* 3D WebGL Canvas */}
-      <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+      <div 
+        ref={mountRef} 
+        className={`w-full h-full ${mouseMode === 'MOVE' ? 'cursor-move' : 'cursor-grab active:cursor-grabbing'}`} 
+      />
 
-      {/* Floating Minimal Camera Toolbar */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-1 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-lg p-1 text-[11px] shadow-lg">
+      {/* Floating Minimal Camera Toolbar (Positioned below top trigger buttons) */}
+      <div className="absolute top-14 left-4 z-20 flex items-center gap-1 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-lg p-1 text-[11px] shadow-lg">
         <div className="px-2 py-1 text-slate-400 font-semibold flex items-center gap-1 border-r border-slate-800">
           <Camera className="w-3.5 h-3.5 text-sky-400" />
           <span>VIEW</span>
@@ -1758,7 +2065,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
               ? 'bg-sky-600 text-white font-bold'
               : 'text-slate-300 hover:text-white hover:bg-slate-800'
           }`}
-          title="Full 360° Free Camera (WASD keys + Mouse drag)"
+          title="Full 360° Free Camera (Hold Left Mouse to Rotate/Move)"
         >
           Free Explore
         </button>
@@ -1813,6 +2120,34 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         >
           Disaster Focus
         </button>
+
+        {/* Mouse Mode Selector: Rotate vs Move with Left Click */}
+        <div className="flex items-center gap-0.5 border-l border-slate-800 pl-1.5 ml-1 bg-slate-950/70 p-0.5 rounded-md">
+          <button
+            onClick={() => setMouseMode('ROTATE')}
+            className={`px-2 py-0.5 rounded flex items-center gap-1 transition-all ${
+              mouseMode === 'ROTATE'
+                ? 'bg-sky-600 text-white font-bold shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+            title="Left Click + Drag: Rotate & Orbit 360°"
+          >
+            <RotateCw className="w-3 h-3 text-sky-300" />
+            <span>Rotate</span>
+          </button>
+          <button
+            onClick={() => setMouseMode('MOVE')}
+            className={`px-2 py-0.5 rounded flex items-center gap-1 transition-all ${
+              mouseMode === 'MOVE'
+                ? 'bg-purple-600 text-white font-bold shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+            title="Left Click + Drag: Move & Pan across terrain"
+          >
+            <Move className="w-3 h-3 text-purple-300" />
+            <span>Move</span>
+          </button>
+        </div>
       </div>
 
       {/* Landslide Hazard Active HUD */}
@@ -1862,7 +2197,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
       {/* Floating Controls Hint Tooltip */}
       {showControlsHint && (
-        <div className="absolute top-14 left-4 z-20 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-lg p-2.5 text-[10px] text-slate-300 max-w-xs shadow-xl animate-fade-in flex flex-col gap-1.5">
+        <div className="absolute top-[98px] left-4 z-20 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-lg p-2.5 text-[10px] text-slate-300 max-w-xs shadow-xl animate-fade-in flex flex-col gap-1.5">
           <div className="flex items-center justify-between font-bold text-sky-400">
             <span className="flex items-center gap-1">
               <Compass className="w-3.5 h-3.5" /> 360° Game Controls
@@ -1875,14 +2210,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
             </button>
           </div>
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-300">
-            <div><span className="text-amber-400 font-bold">Left Drag:</span> Orbit/Look</div>
-            <div><span className="text-amber-400 font-bold">Right Drag:</span> Pan</div>
-            <div><span className="text-amber-400 font-bold">Wheel:</span> Zoom</div>
-            <div><span className="text-amber-400 font-bold">WASD:</span> Move</div>
+            <div><span className="text-amber-400 font-bold">Left Drag:</span> {mouseMode === 'ROTATE' ? 'Rotate 360°' : 'Move / Pan'}</div>
+            <div><span className="text-amber-400 font-bold">Shift / Right:</span> {mouseMode === 'ROTATE' ? 'Move / Pan' : 'Rotate 360°'}</div>
+            <div><span className="text-amber-400 font-bold">Wheel:</span> Zoom In/Out</div>
+            <div><span className="text-amber-400 font-bold">WASD:</span> Move / Fly</div>
             <div><span className="text-amber-400 font-bold">Q / E:</span> Down / Up</div>
-            <div><span className="text-amber-400 font-bold">Shift:</span> Boost</div>
-            <div><span className="text-amber-400 font-bold">Double Click:</span> Focus</div>
-            <div><span className="text-amber-400 font-bold">R Key:</span> Reset</div>
+            <div><span className="text-amber-400 font-bold">Double Click:</span> Fly to Point</div>
+            <div><span className="text-amber-400 font-bold">Shift:</span> Speed Boost</div>
+            <div><span className="text-amber-400 font-bold">R Key:</span> Reset View</div>
           </div>
         </div>
       )}
@@ -1936,7 +2271,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       )}
 
       {/* Small Unobtrusive Digital Twin Watermark */}
-      <div className="absolute top-4 right-4 z-10 pointer-events-none text-[10px] font-mono text-slate-600 bg-white/70 backdrop-blur-sm px-2.5 py-1 rounded border border-slate-300 shadow-sm">
+      <div className="absolute top-14 right-4 z-10 pointer-events-none text-[10px] font-mono text-slate-600 bg-white/70 backdrop-blur-sm px-2.5 py-1 rounded border border-slate-300 shadow-sm">
         SIMULATED DIGITAL TWIN — NOT TO SCALE
       </div>
     </div>

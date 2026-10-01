@@ -64,7 +64,7 @@ export const EvidenceLedger: React.FC = () => {
         </button>
       </div>
 
-      {/* Button / Trigger: WHY DID AEGIS-X RAISE THIS ALERT? */}
+      {/* Button / Trigger: WHY DID THE SYSTEM RAISE THIS ALERT? */}
       <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HelpCircle className="w-4 h-4 text-sky-700 shrink-0" />

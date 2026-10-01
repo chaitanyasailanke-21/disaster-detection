@@ -83,7 +83,7 @@ export const JudgeDemoOverlay: React.FC<JudgeDemoOverlayProps> = ({
     <>
       {/* 1. TOP HEADER OVERLAY (Extremely minimal, unobtrusive, daylight clean) */}
       <div className="absolute top-3 left-3 right-3 z-30 pointer-events-none flex items-center justify-between">
-        {/* Top-Left: AEGIS-X DEMO MODE */}
+        {/* Top-Left: DEMO MODE */}
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-md rounded-xl px-3.5 py-1.5 flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 text-sky-700 font-bold">
             <Radio className="w-3.5 h-3.5 animate-pulse text-sky-600" />
@@ -216,7 +216,7 @@ export const JudgeDemoOverlay: React.FC<JudgeDemoOverlayProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
               <div className="text-xs text-amber-950 font-medium leading-tight">
                 <strong className="font-semibold text-amber-900">“Evidence Before Escalation”: </strong>
-                {currentStep.aegisCallout.replace(/^AEGIS-X:\s*"?/, '').replace(/"?$/, '')}
+                {currentStep.aegisCallout.replace(/^(?:AEGIS-X|System):\s*"?/, '').replace(/"?$/, '')}
               </div>
             </div>
 
