@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Header } from './components/Header';
 import { ThreeScene } from './components/ThreeScene';
 import { EngineeringView } from './components/EngineeringView';
@@ -412,6 +413,8 @@ export default function App() {
       {isWelcomeOpen && (
         <WelcomeJudgePopup onDismiss={() => setIsWelcomeOpen(false)} />
       )}
+      
+      <Analytics />
     </div>
   );
 }
