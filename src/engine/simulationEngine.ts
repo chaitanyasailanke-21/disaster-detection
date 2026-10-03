@@ -175,7 +175,7 @@ export const PROTOTYPE_NODES: SensorNode[] = [
     hardware: 'ESP32-S3 + SX1262',
     isPhysicalPrototype: true,
     zone: 'RIVER',
-    position: [42.5, 1.2, 2.5], // X: 42.5, Y: 1.2, Z: 2.5 (Watch Tower base riverfront)
+    position: [7.2, -0.42, 32.2], // X: 7.2, Y: -0.42, Z: 32.2 (Embankment Level)
     nodeHealth: 'OPERATIONAL',
     overallSensorTrustPct: 95,
     localHazardConfidence: 0.04,
@@ -1211,7 +1211,7 @@ export class SimulationEngine {
     if (this.activeHazard.type === 'FLOOD' || this.activeHazard.type === 'EXTREME_RAIN') {
       // 1. Flood Node 1 (X: 17.6, Z: -53.3, upstream mountain river gorge) detects surge first
       const floodNode1 = this.getNode('NODE-FLOOD-1');
-      const floodNode2 = this.getNode('NODE-1'); // Flood Node 2 at [42.5, 1.2, 2.5]
+      const floodNode2 = this.getNode('NODE-1'); // Flood Node 2 at [7.2, -0.42, 32.2]
       if (floodNode1) {
         floodNode1.sensors.forEach(s => {
           if (s.type === 'WATER_LEVEL_ULTRASONIC') {
@@ -1265,7 +1265,7 @@ export class SimulationEngine {
 
             this.addLedgerEntry(
               'NEIGHBOUR_RESPONSE',
-              'FLOOD CORROBORATION: Flood Node 2 (X: 42.5, Z: 2.5) confirmed downstream embankment surge (3.90m)',
+              'FLOOD CORROBORATION: Flood Node 2 (X: 7.2, Z: 32.2) confirmed downstream embankment surge (3.90m)',
               floodNode2.id,
               floodNode2.overallSensorTrustPct,
               0.76,

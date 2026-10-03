@@ -303,7 +303,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
                   ? 'bg-sky-600 border-sky-400 text-white font-bold'
                   : 'bg-slate-800/70 border-slate-700/50 text-sky-300 hover:text-white hover:bg-slate-700'
               }`}
-              title="Focus Flood Node 2 (X: 42.5, Z: 2.5, Valley Embankment)"
+              title="Focus Flood Node 2 (X: 7.2, Z: 32.2, Embankment Level)"
             >
               🌊 Flood Node 2
             </button>

@@ -337,9 +337,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           targetCamPosRef.current.set(54.0, 18.5, 12.0);
           targetLookAtRef.current.set(42.5, 14.5, 2.5);
         } else if (currNodeId === 'NODE-1') {
-          // Flood Node 2 at [42.5, 1.2, 2.5]
-          targetCamPosRef.current.set(48.5, 3.2, 7.5);
-          targetLookAtRef.current.set(42.5, 1.2, 2.5);
+          // Flood Node 2 at [7.2, -0.42, 32.2]
+          targetCamPosRef.current.set(12.5, 1.8, 36.5);
+          targetLookAtRef.current.set(7.2, -0.42, 32.2);
         } else if (currNodeId === 'NODE-FLOOD-1') {
           // Flood Node 1 at [17.6, 0.45, -53.3] (under mountain gorge)
           targetCamPosRef.current.set(22.5, 3.2, -48.0);
@@ -1303,6 +1303,33 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const borderFactor = Math.min(1.0, Math.max(0.0, borderDist / 4.0));
       y = y * (1.0 - borderFactor);
     }
+
+    // ==========================================
+    // CLEAR TERRAIN FROM ROADWAYS & HIGHWAY CORRIDORS
+    // Strictly clear all green terrain from roads, bridge approaches, and shoulders
+    // ==========================================
+    // 1. West Highway (Centerline Z = -6.0, from bridge approach X = 7.5 extending west across the mainland)
+    if (x <= 8.5) {
+      const distToWestRoad = Math.abs(z - (-6.0));
+      if (distToWestRoad < 5.2) {
+        if (distToWestRoad <= 2.6) {
+          // Directly under road asphalt & road foundation (road half-width = 1.9m + 0.7m margin):
+          // Ground level is strictly depressed to 0.0 or lower, completely clearing the road surface
+          y = Math.min(y, 0.0);
+        } else {
+          // Smooth road embankment cut ramping up to natural hill height
+          const rT = (distToWestRoad - 2.6) / 2.6; // 0 to 1
+          const rSmooth = rT * rT * (3.0 - 2.0 * rT);
+          y = Math.min(y, Math.max(0.0, y) * rSmooth);
+        }
+      }
+    }
+
+    // 2. North & South connecting highways along X = 24.0
+    if (Math.abs(x - 24.0) < 3.2 && z >= -38.0 && z <= 36.0) {
+      y = Math.min(y, 0.40);
+    }
+
     return y;
   }
 
@@ -1518,6 +1545,15 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         }
       }
 
+      // Highway corridor gravel shoulder & verge: clean transition alongside west road
+      if (Math.abs(z - (-6.0)) < 3.4 && x <= 8.5) {
+        const roadDist = Math.abs(z - (-6.0));
+        const roadBlend = Math.max(0, 1.0 - roadDist / 3.4);
+        r = THREE.MathUtils.lerp(r, 0.28, roadBlend);
+        g = THREE.MathUtils.lerp(g, 0.29, roadBlend);
+        b = THREE.MathUtils.lerp(b, 0.27, roadBlend);
+      }
+
       colors[i * 3] = Math.max(0, Math.min(1, r));
       colors[i * 3 + 1] = Math.max(0, Math.min(1, g));
       colors[i * 3 + 2] = Math.max(0, Math.min(1, b));
@@ -1549,6 +1585,11 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       // Strictly avoid roads, river corridor, and specified mountain river region
       if (Math.abs(rx - 13) < 4 || Math.abs(rx) < 5 || (rx < -2 && rz > 2)) continue;
       if (rx >= 7.5 && rx <= 21.0 && rz >= -67.0 && rz <= -43.0) continue;
+      // Strictly avoid West highway (Z = -6.0, X <= 9.0) and connecting highways
+      if (Math.abs(rz - (-6.0)) < 4.2 && rx <= 9.0) continue;
+      if (Math.abs(rx - 24.0) < 4.0) continue;
+      if (Math.abs(rz - 32.0) < 4.0 && rx > 20.0) continue;
+      if (Math.abs(rx - 40.0) < 4.0 && rz > 10.0) continue;
       const rockRadius = 0.35 + Math.random() * 0.5;
       const rockGeo = new THREE.DodecahedronGeometry(rockRadius);
       const rockMesh = new THREE.Mesh(rockGeo, rockMat);
@@ -1580,7 +1621,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   }
 
   const BURNING_TREES: BurningTreeDef[] = [
-    // Original core ignition cluster
+    // Original core ignition cluster in timber reserve (safely south of highway Z = -6.0)
     { x: -18.2, z: -14.2, scale: 1.15, isBirch: false },
     { x: -15.8, z: -16.0, scale: 1.05, isBirch: false },
     { x: -20.5, z: -12.5, scale: 1.20, isBirch: true  },
@@ -1588,10 +1629,10 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     { x: -17.2, z: -10.5, scale: 1.10, isBirch: false },
     { x: -21.8, z: -15.2, scale: 1.00, isBirch: false },
     { x: -19.6, z: -17.5, scale: 1.08, isBirch: false },
-    // Fire spreading north
-    { x: -16.4, z:  -8.2, scale: 1.05, isBirch: false },
-    { x: -22.4, z:  -9.0, scale: 1.12, isBirch: false },
-    { x: -14.2, z:  -7.0, scale: 0.98, isBirch: true  },
+    // Fire spreading north toward (but strictly south of) highway boundary
+    { x: -16.4, z: -11.2, scale: 1.05, isBirch: false },
+    { x: -22.4, z: -11.0, scale: 1.12, isBirch: false },
+    { x: -14.2, z: -10.8, scale: 0.98, isBirch: true  },
     { x: -25.0, z: -11.5, scale: 1.18, isBirch: false },
     // Fire spreading west — deeper into dense forest
     { x: -24.6, z: -17.0, scale: 1.10, isBirch: false },
@@ -1600,24 +1641,22 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     // Fire spreading east toward forest edge
     { x: -11.5, z: -15.5, scale: 0.90, isBirch: false },
     { x: -10.2, z: -12.0, scale: 0.85, isBirch: false },
-    // Further north spread — crown fire jumping
-    { x: -12.8, z:  -5.2, scale: 1.02, isBirch: false },
-    { x: -18.8, z:  -4.5, scale: 1.08, isBirch: true  },
-    { x: -24.0, z:  -5.8, scale: 1.14, isBirch: false },
-    { x: -20.5, z:  -2.5, scale: 0.96, isBirch: false },
-    { x: -15.0, z:  -2.0, scale: 1.00, isBirch: false },
-    // Further east spread into forest interior
-    { x:  -8.5, z: -10.5, scale: 0.88, isBirch: false },
-    { x:  -7.2, z: -14.8, scale: 0.82, isBirch: false },
-    { x:  -9.0, z:  -7.5, scale: 0.94, isBirch: true  },
-    // Further west — dense pine zone
+    // Further western dense pine zone
     { x: -30.0, z: -12.5, scale: 1.15, isBirch: false },
     { x: -29.5, z: -17.8, scale: 1.10, isBirch: false },
     { x: -32.0, z: -14.0, scale: 1.05, isBirch: false },
-    // North-east — bridging toward forest boundary
-    { x: -13.0, z:  -0.5, scale: 0.90, isBirch: false },
-    { x: -20.0, z:   0.8, scale: 0.95, isBirch: true  },
-    { x: -27.5, z:  -2.0, scale: 1.02, isBirch: false },
+    // Southern forest interior
+    { x: -12.8, z: -18.2, scale: 1.02, isBirch: false },
+    { x: -18.8, z: -20.5, scale: 1.08, isBirch: true  },
+    { x: -24.0, z: -21.8, scale: 1.14, isBirch: false },
+    { x: -20.5, z: -22.5, scale: 0.96, isBirch: false },
+    { x: -15.0, z: -21.0, scale: 1.00, isBirch: false },
+    { x:  -8.5, z: -13.5, scale: 0.88, isBirch: false },
+    { x:  -7.2, z: -14.8, scale: 0.82, isBirch: false },
+    { x:  -9.0, z: -11.5, scale: 0.94, isBirch: true  },
+    { x: -13.0, z: -16.5, scale: 0.90, isBirch: false },
+    { x: -20.0, z: -15.8, scale: 0.95, isBirch: true  },
+    { x: -27.5, z: -16.0, scale: 1.02, isBirch: false }
   ];
 
   function buildDenseForestZone(scene: THREE.Scene) {
@@ -1629,8 +1668,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     const pineMat2 = new THREE.MeshStandardMaterial({ color: 0x226738, roughness: 0.78, flatShading: true });
     const birchFoliageMat = new THREE.MeshStandardMaterial({ color: 0x367c4d, roughness: 0.8, flatShading: true });
 
-    // Place the specific cluster of trees that catch fire
+    // Place the specific cluster of trees that catch fire (strictly off-road)
     BURNING_TREES.forEach((bt) => {
+      if (Math.abs(bt.z - (-6.0)) < 4.5 && bt.x < 9.0) return;
       const tree = new THREE.Group();
       const scale = bt.scale;
       if (bt.isBirch) {
@@ -1846,10 +1886,38 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
 
     // Explicit tree removal pass to guarantee NO trees, shrubs, or logs exist in the specified river region (X: 7.5 to 21.0, Z: -67.0 to -43.0)
+    // AND GUARANTEED COMPLETE CLEARANCE OF ALL HIGHWAYS & ROADS
     for (let i = forest.children.length - 1; i >= 0; i--) {
       const child = forest.children[i];
-      if (child.position.x >= 7.5 && child.position.x <= 21.0 && child.position.z >= -67.0 && child.position.z <= -43.0) {
+      const cx = child.position.x;
+      const cz = child.position.z;
+
+      // River gorge clearing
+      if (cx >= 7.5 && cx <= 21.0 && cz >= -67.0 && cz <= -43.0) {
         forest.remove(child);
+        continue;
+      }
+
+      // 1. West Highway (centerline Z = -6.0 across entire west territory, X <= 9.0)
+      if (Math.abs(cz - (-6.0)) < 4.2 && cx <= 9.0) {
+        forest.remove(child);
+        continue;
+      }
+
+      // 2. North & South Highways along X = 24.0
+      if (Math.abs(cx - 24.0) < 4.2 && cz >= -38.0 && cz <= 56.0) {
+        forest.remove(child);
+        continue;
+      }
+
+      // 3. Village central roads
+      if (Math.abs(cz - 32.0) < 4.0 && cx > 20.0 && cx < 54.0) {
+        forest.remove(child);
+        continue;
+      }
+      if (Math.abs(cx - 40.0) < 4.0 && cz > 10.0 && cz < 56.0) {
+        forest.remove(child);
+        continue;
       }
     }
 
@@ -2106,17 +2174,25 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     westPierHead.castShadow = true;
     scene.add(westPierHead);
 
-    // West road continuation onto mainland
-    const westRoad = new THREE.Mesh(new THREE.PlaneGeometry(12.0, 3.8), asphaltMat);
+    // West road continuation onto mainland extending across the forest corridor
+    const westRoadLen = 48.0;
+    const westRoadCenterX = 0.5 - westRoadLen * 0.5; // -23.5
+    const westRoad = new THREE.Mesh(new THREE.PlaneGeometry(westRoadLen, 3.8), asphaltMat);
     westRoad.rotateX(-Math.PI / 2);
-    westRoad.position.set(-5.5, 0.22, -6.0);
+    westRoad.position.set(westRoadCenterX, 0.25, -6.0);
     westRoad.receiveShadow = true;
     scene.add(westRoad);
 
-    const westRoadStripe = new THREE.Mesh(new THREE.PlaneGeometry(12.0, 0.16), lineYellowMat);
+    const westRoadStripe = new THREE.Mesh(new THREE.PlaneGeometry(westRoadLen, 0.16), lineYellowMat);
     westRoadStripe.rotateX(-Math.PI / 2);
-    westRoadStripe.position.set(-5.5, 0.23, -6.0);
+    westRoadStripe.position.set(westRoadCenterX, 0.26, -6.0);
     scene.add(westRoadStripe);
+
+    // Clean paved road gravel/concrete sub-base underneath to completely prevent any ground z-fighting
+    const westRoadBase = new THREE.Mesh(new THREE.BoxGeometry(westRoadLen, 0.24, 4.2), abutmentMat);
+    westRoadBase.position.set(westRoadCenterX, 0.12, -6.0);
+    westRoadBase.receiveShadow = true;
+    scene.add(westRoadBase);
 
     // B. EAST APPROACH RAMP (Right Side: Slopes down from x=19.25, y=1.45 to x=24.5, y=0.50)
     const eastSpanX = 5.25;
@@ -3778,24 +3854,24 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     let borderColor = accentColor;
     let badgeTag = tag;
-    let tagBg = 'rgba(14, 165, 233, 0.22)';
-    let tagFg = '#38bdf8';
+    let tagBg = accentColor;
+    let tagFg = '#ffffff';
 
     if (state === 'CRITICAL') {
       borderColor = '#ef4444';
       badgeTag = 'CRITICAL ALERT';
-      tagBg = 'rgba(239, 68, 68, 0.35)';
-      tagFg = '#f87171';
+      tagBg = '#ef4444';
+      tagFg = '#ffffff';
     } else if (state === 'WARNING') {
       borderColor = '#f59e0b';
       badgeTag = 'CORROBORATING';
-      tagBg = 'rgba(245, 158, 11, 0.35)';
-      tagFg = '#fbbf24';
+      tagBg = '#f59e0b';
+      tagFg = '#ffffff';
     } else if (state === 'WATCH') {
       borderColor = '#38bdf8';
       badgeTag = 'WATCH ACTIVE';
-      tagBg = 'rgba(56, 189, 248, 0.35)';
-      tagFg = '#7dd3fc';
+      tagBg = '#0284c7';
+      tagFg = '#ffffff';
     }
 
     // Outer frosted container
@@ -3809,13 +3885,13 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     ctx.strokeStyle = borderColor;
     ctx.stroke();
 
-    // Title: e.g. "FLOOD NODE 1"
-    ctx.font = 'bold 28px sans-serif';
+    // Title: e.g. "FLOOD NODE 2"
+    ctx.font = 'bold 30px "Chakra Petch", sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(title, 24, 46);
+    ctx.fillText(title, 24, 48);
 
-    // Minimal details: e.g. "MOUNTAIN RUNOFF GAUGE · NODE #1"
-    ctx.font = '500 17px monospace';
+    // Minimal details: e.g. "EMBANKMENT LEVEL · TOP NODE #2"
+    ctx.font = '600 16px "JetBrains Mono", monospace';
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(subtitle, 24, 80);
 
@@ -3824,18 +3900,18 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     ctx.beginPath();
     ctx.roundRect(24, 98, 230, 36, 10);
     ctx.fill();
-    ctx.font = 'bold 16px monospace';
+    ctx.font = 'bold 15px "JetBrains Mono", monospace';
     ctx.fillStyle = tagFg;
-    ctx.fillText(badgeTag, 36, 122);
+    ctx.fillText(badgeTag, 36, 121);
 
     // Microchip hardware tag
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
     ctx.beginPath();
     ctx.roundRect(canvas.width - 188, 98, 164, 36, 10);
     ctx.fill();
-    ctx.font = '600 15px monospace';
+    ctx.font = '600 15px "JetBrains Mono", monospace';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('ESP32-S3 LoRa', canvas.width - 176, 122);
+    ctx.fillText('ESP32-S3 LoRa', canvas.width - 176, 121);
   }
 
   function buildPrototypeFieldNodes(scene: THREE.Scene) {
@@ -3844,7 +3920,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     simulationEngine.prototypeNodes.forEach(node => {
       if (node.id === 'NODE-SUPERIOR') return; // Dedicated 14m Watch Tower mesh handles NODE-SUPERIOR
       const nodeGroup = new THREE.Group();
-      const nodeElevation = getMountainTerrainElevation(node.position[0], node.position[2]);
+      const nodeElevation = node.position[1] !== undefined ? node.position[1] : getMountainTerrainElevation(node.position[0], node.position[2]);
       nodeGroup.position.set(node.position[0], nodeElevation, node.position[2]);
       nodeGroup.userData = { nodeId: node.id };
 
