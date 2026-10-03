@@ -1,0 +1,8 @@
+{
+  "name": "Remix AEGIS-X: Adaptive Cooperative Edge Intelligence \u0026 Safety Grid",
+  "description": "Interactive 3D disaster-response simulation demonstrating distributed edge sensor nodes, LoRa-style cooperative corroboration, and gateway evidence fusion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
