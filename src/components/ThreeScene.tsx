@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { 
@@ -7,7 +7,7 @@ import {
   RISK_ZONES,
   PLACEMENT_CANDIDATES
 } from '../engine/simulationEngine';
-import { NodeId, LoRaPacket, WeatherMode, CameraMode } from '../types/simulation';
+import { NodeId, LoRaPacket, WeatherMode, CameraMode, SensorNode } from '../types/simulation';
 import { cinematicDemoManager, CinematicCameraDriver } from '../cinematic/CinematicDemoManager';
 import { qualityManager } from '../cinematic/QualityManager';
 import { 
@@ -189,6 +189,32 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const watchtowerCpuLedRef = useRef<THREE.Mesh | null>(null);
   const watchtowerAqiLedRef = useRef<THREE.Mesh | null>(null);
 
+  // Mountain water torrents & spray references (excess water from mountains feeding river flood)
+  const mountainWaterGroupRef = useRef<THREE.Group | null>(null);
+  const mountainWaterfallsRef = useRef<THREE.Mesh[]>([]);
+  interface MountainStreamHandle {
+    mesh: THREE.Mesh;
+    basePos: { x: Float32Array; y: Float32Array; z: Float32Array };
+    wColors: Float32Array;
+    flowDirection: { x: number; z: number };
+    baseSpeed: number;
+    baseScale: { x: number; y: number; z: number };
+  }
+  const mountainStreamsRef = useRef<MountainStreamHandle[]>([]);
+  const mountainSprayParticlesRef = useRef<THREE.Points | null>(null);
+
+  interface NodeBadgeHandle {
+    sprite: THREE.Sprite;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    texture: THREE.CanvasTexture;
+    title: string;
+    details: string;
+    accentColor: string;
+    lastState?: string;
+  }
+  const nodeBadgesMapRef = useRef<Map<string, NodeBadgeHandle>>(new Map());
+
   // 20 Villagers Evacuation references (running towards the emergency shed during disaster)
   interface VillagerEntity {
     id: number;
@@ -299,8 +325,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         targetLookAtRef.current.set(-16, 1.2, -12);
         break;
       case 'FLOOD_OVERVIEW':
-        targetCamPosRef.current.set(15.2, 11, 28);
-        targetLookAtRef.current.set(11.2, 0.0, 16);
+        targetCamPosRef.current.set(18.0, 24.0, -18.0);
+        targetLookAtRef.current.set(16.0, 2.0, -48.0);
         break;
       case 'HILLSIDE_OVERVIEW':
         targetCamPosRef.current.set(-6, 22, 54);
@@ -310,20 +336,36 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         if (currNodeId === 'NODE-SUPERIOR') {
           targetCamPosRef.current.set(54.0, 18.5, 12.0);
           targetLookAtRef.current.set(42.5, 14.5, 2.5);
-        } else if (currNodeId === 'NODE-4') {
-          // NODE-4 is now on the Watch Tower roof — same view as Watch Tower
-          targetCamPosRef.current.set(54.0, 18.5, 12.0);
-          targetLookAtRef.current.set(42.5, 15.0, 2.5);
+        } else if (currNodeId === 'NODE-1') {
+          // Flood Node 2 at [42.5, 1.2, 2.5]
+          targetCamPosRef.current.set(48.5, 3.2, 7.5);
+          targetLookAtRef.current.set(42.5, 1.2, 2.5);
+        } else if (currNodeId === 'NODE-FLOOD-1') {
+          // Flood Node 1 at [17.6, 0.45, -53.3] (under mountain gorge)
+          targetCamPosRef.current.set(22.5, 3.2, -48.0);
+          targetLookAtRef.current.set(17.6, 0.8, -53.3);
         } else if (currNodeId === 'NODE-2') {
-          targetCamPosRef.current.set(-14.2, 2.4, -10.2);
-          targetLookAtRef.current.set(-16, 1.4, -12);
+          // Forest Fire Node 1 at [-16.0, 1.2, -12.0]
+          targetCamPosRef.current.set(-13.0, 2.8, -8.0);
+          targetLookAtRef.current.set(-16.0, 1.2, -12.0);
+        } else if (currNodeId === 'NODE-FIRE-2') {
+          // Forest Fire Node 2 at [-41.6, 2.5, -38.8]
+          targetCamPosRef.current.set(-37.5, 4.5, -34.5);
+          targetLookAtRef.current.set(-41.6, 2.5, -38.8);
         } else if (currNodeId === 'NODE-3') {
-          targetCamPosRef.current.set(-32.5, 19.5, 45.5);
-          targetLookAtRef.current.set(-35.7, 17.5, 41.7);
+          // Landslide Node 1 at [-35.7, 16.84, 41.7]
+          targetCamPosRef.current.set(-32.0, 19.5, 45.5);
+          targetLookAtRef.current.set(-35.7, 16.84, 41.7);
+        } else if (currNodeId === 'NODE-LANDSLIDE-2') {
+          // Landslide Node 2 at [-9.0, 3.2, 34.7]
+          targetCamPosRef.current.set(-5.5, 5.2, 38.5);
+          targetLookAtRef.current.set(-9.0, 3.2, 34.7);
         } else {
-          // NODE-1: In-channel hydrological river flooding station at X: 10.6, Y: -0.63, Z: 17.9
-          targetCamPosRef.current.set(13.5, 1.8, 20.8);
-          targetLookAtRef.current.set(10.6, 0.4, 17.9);
+          const n = simulationEngine.nodes.find(pn => pn.id === currNodeId);
+          if (n) {
+            targetCamPosRef.current.set(n.position[0] + 4.5, n.position[1] + 3.0, n.position[2] + 4.5);
+            targetLookAtRef.current.set(n.position[0], n.position[1] + 0.8, n.position[2]);
+          }
         }
         break;
       case 'WATCHTOWER_FOCUS':
@@ -556,6 +598,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     buildHillsideLandslideZone(scene);
     buildPrototypeFieldNodes(scene);
     buildWatchTowerMesh(scene);
+    buildRealisticMountainWaterSystem(scene);
     buildDisasterParticles(scene);
     buildVolumetricForestFire(scene);
     buildRiskHeatmapLayers(scene);
@@ -1161,15 +1204,103 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (x < 0 && z < 0) {
       y += Math.sin(x * 0.22) * 0.6 + Math.cos(z * 0.22) * 0.6;
     }
+
+    // NORTHERN REALISTIC ALPINE MOUNTAIN RANGE (from X: -35.2, Z: -72.0 to X: 53.3, Z: -70.4)
+    // Directly modeled on the uploaded reference photo (image.png):
+    // Towering craggy peaks, fluted vertical rock ribs, snowy couloirs, and deep gorge
+    if (z < -46.0 && x >= -46.0 && x <= 64.0) {
+      const tNorth = Math.min(1.0, Math.max(0.0, (-z - 46.0) / 24.0));
+      const ramp = tNorth * tNorth * (3.0 - 2.0 * tNorth); // smoothstep
+
+      // West Gorge Peak (peak flanking canyon on the west at X = 3.0, Z = -73.0)
+      const dWestGorge = Math.hypot(x - 3.0, z - (-73.0));
+      const mtnWestGorge = Math.max(0, 36.0 - dWestGorge * 1.08);
+
+      // East Gorge Peak (peak flanking canyon on the east at X = 24.5, Z = -73.0)
+      const dEastGorge = Math.hypot(x - 24.5, z - (-73.0));
+      const mtnEastGorge = Math.max(0, 36.0 - dEastGorge * 1.08);
+
+      // Distant Horn Summit behind canyon headwaters (X = 13.5, Z = -78.0)
+      const dDistantHorn = Math.hypot(x - 13.5, z - (-78.0));
+      const mtnDistantHorn = Math.max(0, 42.0 - dDistantHorn * 1.02);
+
+      // Western Pyramid Peak (left peak in image.png, around X = -21.0, Z = -72.5)
+      const dWest = Math.hypot(x - (-21.0), z - (-72.5));
+      const mtnWest = Math.max(0, 32.0 - dWest * 1.15);
+      const flutingWest = Math.sin(Math.atan2(z - (-72.5), x - (-22.0)) * 6.0) * 1.8;
+
+      // Eastern Escarpment Bastion (right peak in image.png, around X = 43.0, Z = -71.5)
+      const dEast = Math.hypot(x - 43.0, z - (-71.5));
+      const mtnEast = Math.max(0, 34.0 - dEast * 1.10);
+
+      // Far Western Anchor (X = -35.2, Z = -72.0)
+      const dFarWest = Math.hypot(x - (-35.2), z - (-72.0));
+      const mtnFarWest = Math.max(0, 24.0 - dFarWest * 0.95);
+
+      // Far Eastern Anchor (X = 53.3, Z = -70.4)
+      const dFarEast = Math.hypot(x - 53.3, z - (-70.4));
+      const mtnFarEast = Math.max(0, 22.0 - dFarEast * 0.95);
+
+      let mtnElevation = Math.max(mtnWestGorge, mtnEastGorge, mtnDistantHorn, mtnWest + flutingWest, mtnEast, mtnFarWest, mtnFarEast);
+
+      y = Math.max(y, mtnElevation * ramp);
+    }
+
+    // EXACT RIVER CANYON CHANNEL CARVING
+    // River flowing from (X: 11, Z: -64.5 to X: 15.4, Z: -63.6) down to (X: 10.3, Z: -46.1 to X: 17.9, Z: -46.1)
+    if (z >= -66.5 && z <= -44.5) {
+      const tRiv = Math.min(1.0, Math.max(0.0, (z - (-64.5)) / 18.4));
+      const leftBankX = 11.0 + (10.3 - 11.0) * tRiv;
+      const rightBankX = 15.4 + (17.9 - 15.4) * tRiv;
+      const rivCenterX = (leftBankX + rightBankX) * 0.5;
+      const rivHalfWidth = (rightBankX - leftBankX) * 0.5;
+      const distFromRivCenter = Math.abs(x - rivCenterX);
+
+      if (distFromRivCenter < rivHalfWidth + 4.5) {
+        // Water surface elevation smoothly cascading down from 4.8m down to -0.65m at confluence
+        const rivWaterY = -0.65 + (4.8 - (-0.65)) * Math.pow(1.0 - tRiv, 1.30);
+        // Riverbed carved underneath water surface (deepest in center, curving up to banks)
+        const bedDepth = 0.85 * (1.0 - Math.min(1.0, Math.pow(distFromRivCenter / rivHalfWidth, 2)));
+        const targetBedY = rivWaterY - bedDepth;
+
+        if (distFromRivCenter <= rivHalfWidth) {
+          y = Math.min(y, targetBedY);
+        } else {
+          const bankRamp = (distFromRivCenter - rivHalfWidth) / 4.5;
+          const smoothBank = bankRamp * bankRamp * (3.0 - 2.0 * bankRamp);
+          const targetY = THREE.MathUtils.lerp(rivWaterY + 0.12, y, smoothBank);
+          y = Math.min(y, targetY);
+        }
+      }
+    }
+
+    // Mountain canyon upstream gully feeding the river headwaters (Z: -74.0 to -64.5)
+    if (z < -64.5 && z >= -74.0) {
+      const tUp = Math.min(1.0, Math.max(0.0, (-64.5 - z) / 9.5));
+      const gullyCenterX = 13.2;
+      const gullyHalfWidth = 2.2 + 2.2 * tUp;
+      const distGully = Math.abs(x - gullyCenterX);
+      if (distGully < gullyHalfWidth + 4.0) {
+        const gullyFloorY = 4.8 + 8.5 * tUp;
+        if (distGully <= gullyHalfWidth) {
+          y = Math.min(y, gullyFloorY);
+        } else {
+          const gRamp = (distGully - gullyHalfWidth) / 4.0;
+          const smoothG = gRamp * gRamp * (3.0 - 2.0 * gRamp);
+          y = Math.min(y, THREE.MathUtils.lerp(gullyFloorY + 0.15, y, smoothG));
+        }
+      }
+    }
+
     // Terraced Plains below the river: Houses at grey spot (z=20 to 46), Factory at blue spot (z=-48 to -22), Evacuation zone (x=50 to 75)
     if (x >= 20 && x <= 75 && z >= -54 && z <= 54) {
       y = Math.max(y, 0.45); // Flat terrace safely elevated above river level, firmly grounding all village structures and shelter
     }
 
     // Make the surface completely plane / flat at the extreme outer borders of the land
-    const maxEdge = Math.max(Math.abs(x), Math.abs(z));
-    if (maxEdge > 71) {
-      const borderFactor = Math.min(1.0, (maxEdge - 71) / 5.0);
+    if (Math.abs(x) > 71 || z > 71 || z < -78) {
+      const borderDist = Math.max(Math.abs(x) - 71, z > 71 ? z - 71 : -z - 78);
+      const borderFactor = Math.min(1.0, Math.max(0.0, borderDist / 4.0));
       y = y * (1.0 - borderFactor);
     }
     return y;
@@ -1343,6 +1474,48 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         r = mtnGrassR * (1 - peakFactor) + peakR * peakFactor;
         g = mtnGrassG * (1 - peakFactor) + peakG * peakFactor;
         b = mtnGrassB * (1 - peakFactor) + peakB * peakFactor;
+      } else if (z < -46.0 && y > 1.0) {
+        // Northern Realistic Alpine Mountains (from reference image)
+        const peakT = Math.min(1.0, Math.max(0.0, (y - 10.0) / 18.0));
+        const noiseMtn = Math.sin(x * 1.4 - z * 1.1) * 0.035;
+        
+        // Vertical couloir snow streaks
+        const isSnowCouloir = Math.abs(Math.sin(x * 0.5 + z * 0.25)) < 0.24 && y > 12.0;
+        
+        if (isSnowCouloir) {
+          // White snow and bright pale alpine limestone scree in gullies
+          r = 0.90 + noiseMtn * 0.5;
+          g = 0.92 + noiseMtn * 0.5;
+          b = 0.96;
+        } else if (peakT > 0.45) {
+          // Warm granite / limestone buff rock faces matching photo
+          r = 0.68 + noiseMtn;
+          g = 0.62 + noiseMtn * 0.8;
+          b = 0.52 + noiseMtn * 0.6;
+        } else {
+          // Alpine grass and slate lower slopes
+          const grassBlend = 1.0 - Math.min(1.0, peakT * 2.0);
+          r = THREE.MathUtils.lerp(0.46, 0.14, grassBlend) + noiseMtn;
+          g = THREE.MathUtils.lerp(0.44, 0.35, grassBlend) + noiseMtn;
+          b = THREE.MathUtils.lerp(0.40, 0.18, grassBlend);
+        }
+      }
+
+      // Wet riverbed & rocky shores for river flowing from (11, -64.5 to 15.4, -63.6) to (10.3, -46.1 to 17.9, -46.1)
+      if (z >= -66.5 && z <= -44.5) {
+        const tRiv = Math.min(1.0, Math.max(0.0, (z - (-64.5)) / 18.4));
+        const leftBankX = 11.0 + (10.3 - 11.0) * tRiv;
+        const rightBankX = 15.4 + (17.9 - 15.4) * tRiv;
+        const rivCenterX = (leftBankX + rightBankX) * 0.5;
+        const rivHalfWidth = (rightBankX - leftBankX) * 0.5;
+        const distChannel = Math.abs(x - rivCenterX);
+        if (distChannel < rivHalfWidth + 3.0) {
+          const bedBlend = Math.min(1.0, Math.max(0.0, 1.0 - (distChannel - rivHalfWidth * 0.6) / (rivHalfWidth * 0.4 + 3.0)));
+          const noiseBed = Math.sin(x * 3.5 + z * 2.8) * 0.03;
+          r = THREE.MathUtils.lerp(r, 0.20 + noiseBed, bedBlend);
+          g = THREE.MathUtils.lerp(g, 0.26 + noiseBed, bedBlend);
+          b = THREE.MathUtils.lerp(b, 0.32 + noiseBed, bedBlend);
+        }
       }
 
       colors[i * 3] = Math.max(0, Math.min(1, r));
@@ -1373,7 +1546,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     for (let r = 0; r < 24; r++) {
       const rx = (Math.random() - 0.5) * 60;
       const rz = (Math.random() - 0.5) * 60;
+      // Strictly avoid roads, river corridor, and specified mountain river region
       if (Math.abs(rx - 13) < 4 || Math.abs(rx) < 5 || (rx < -2 && rz > 2)) continue;
+      if (rx >= 7.5 && rx <= 21.0 && rz >= -67.0 && rz <= -43.0) continue;
       const rockRadius = 0.35 + Math.random() * 0.5;
       const rockGeo = new THREE.DodecahedronGeometry(rockRadius);
       const rockMesh = new THREE.Mesh(rockGeo, rockMat);
@@ -1503,6 +1678,10 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     // Strict road, river, and station exclusion check
     const isExcludedZone = (x: number, z: number) => {
+      // 1. SPECIFIED RIVER CORRIDOR CLEARING: Strictly remove all trees in region X: 7.5 to 21.0, Z: -66.5 to -43.5
+      if (x >= 7.5 && x <= 21.0 && z >= -66.5 && z <= -43.5) return true;
+      // General northern mountain water & gorge catchment clearance
+      if (z <= -40.0 && x >= 3.0 && x <= 25.0) return true;
       // West highway leading to bridge: road centerline is at z = -6.0 across entire west land
       if (Math.abs(z - (-6.0)) < 5.2 && x < 9.0) return true;
       // River corridor and bridge deck
@@ -1525,6 +1704,12 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (BURNING_TREES.some(bt => Math.hypot(x - bt.x, z - bt.z) < 2.2)) return true;
       // Industrial factory zone at blue spot
       if (x > 26.0 && z < -18.0) return true;
+      // NORTHERN ALPINE MOUNTAIN RANGE (Z < -42.0) — strictly NO trees on mountain peaks, crags & snowy slopes
+      if (z < -42.0) return true;
+      // Alpine mountain timberline: strictly NO trees, bushes or logs above 4.5m elevation
+      if (getMountainTerrainElevation(x, z) > 4.5) return true;
+      // Mountain stream gorge & waterfall catchment corridor
+      if (z < -36.0 && x > 4.0 && x < 26.0) return true;
       return false;
     };
 
@@ -1639,28 +1824,35 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       addTree(tx, tz, i);
     }
 
-    // Pass 2: Northern & Northwestern Deep Forest (Fills the entire empty space in picture 2!)
-    // Spans from tz = -24 down to -70, and tx from -68 across to -6
-    for (let i = 0; i < 340; i++) {
+    // Pass 2: Northwestern Valley Forest (strictly below mountain range z >= -41.0)
+    for (let i = 0; i < 260; i++) {
       const tx = -68 + Math.random() * 62;
-      const tz = -70 + Math.random() * 48;
+      const tz = -41.5 + Math.random() * 22; // tz stays strictly between -41.5 and -19.5
       addTree(tx, tz, i + 220);
     }
 
-    // Pass 3: Western Foothills & Mountain Ridge Border
-    // Spans tx: -70 to -44, tz: -30 to +16 (strictly skipping road z = -6)
-    for (let i = 0; i < 110; i++) {
-      const tx = -70 + Math.random() * 26;
-      const tz = -30 + Math.random() * 46;
-      addTree(tx, tz, i + 560);
+    // Pass 3: Western Foothills & Border (strictly below timberline)
+    for (let i = 0; i < 90; i++) {
+      const tx = -66 + Math.random() * 22;
+      const tz = -30 + Math.random() * 38;
+      addTree(tx, tz, i + 480);
     }
 
-    // Pass 4: Empty space along northern riverbanks & clearing shoulders
-    for (let i = 0; i < 90; i++) {
+    // Pass 4: Northern riverbank woodland shoulders (strictly below mountains z >= -41.0)
+    for (let i = 0; i < 70; i++) {
       const tx = -24 + Math.random() * 26;
-      const tz = -68 + Math.random() * 44;
-      addTree(tx, tz, i + 670);
+      const tz = -41.0 + Math.random() * 18; // tz stays strictly between -41.0 and -23.0
+      addTree(tx, tz, i + 570);
     }
+
+    // Explicit tree removal pass to guarantee NO trees, shrubs, or logs exist in the specified river region (X: 7.5 to 21.0, Z: -67.0 to -43.0)
+    for (let i = forest.children.length - 1; i >= 0; i--) {
+      const child = forest.children[i];
+      if (child.position.x >= 7.5 && child.position.x <= 21.0 && child.position.z >= -67.0 && child.position.z <= -43.0) {
+        forest.remove(child);
+      }
+    }
+
     scene.add(forest);
   }
 
@@ -3516,29 +3708,145 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   // ==========================================
   // PHYSICAL PROTOTYPE NODES (ESP32-S3 + SX1262 LoRa)
-  // Matching Reference Image 2: Rugged enclosure, pole mount, whip antenna, solar canopy
+  // With 3D Floating Billboard HUD Labels visible at all times
   // ==========================================
+  function getNodeBadgeInfo(node: SensorNode): { title: string; subtitle: string; tag: string; color: string } {
+    switch (node.id) {
+      case 'NODE-FLOOD-1':
+        return {
+          title: 'FLOOD NODE 1',
+          subtitle: 'MOUNTAIN RUNOFF GAUGE · NODE #1',
+          tag: 'HEADWATERS INFLOW',
+          color: '#06b6d4'
+        };
+      case 'NODE-1':
+        return {
+          title: 'FLOOD NODE 2',
+          subtitle: 'EMBANKMENT LEVEL · TOP NODE #2',
+          tag: 'CORRIDOR PRIMARY',
+          color: '#0284c7'
+        };
+      case 'NODE-2':
+        return {
+          title: 'FOREST FIRE NODE 1',
+          subtitle: 'SMOKE MQ-2 & THERMAL IR · NODE #1',
+          tag: 'TIMBER WATCH #1',
+          color: '#f97316'
+        };
+      case 'NODE-FIRE-2':
+        return {
+          title: 'FOREST FIRE NODE 2',
+          subtitle: 'OPTICAL FLAME IR & GAS · NODE #2',
+          tag: 'CANOPY CORROBORATION',
+          color: '#fb923c'
+        };
+      case 'NODE-3':
+        return {
+          title: 'LANDSLIDE NODE 1',
+          subtitle: 'ESCARPMENT GEOPHONE · TOP NODE #1',
+          tag: 'SLOPE PRIMARY',
+          color: '#f59e0b'
+        };
+      case 'NODE-LANDSLIDE-2':
+        return {
+          title: 'LANDSLIDE NODE 2',
+          subtitle: 'RUNOUT TILT & GEOPHONE · NODE #2',
+          tag: 'RUNOUT CORROBORATION',
+          color: '#eab308'
+        };
+      default:
+        return {
+          title: node.name.toUpperCase(),
+          subtitle: node.role.slice(0, 32),
+          tag: 'FIELD NODE',
+          color: '#10b981'
+        };
+    }
+  }
+
+  function renderBadgeCanvas(
+    canvas: HTMLCanvasElement,
+    title: string,
+    subtitle: string,
+    tag: string,
+    accentColor: string,
+    state: string
+  ) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let borderColor = accentColor;
+    let badgeTag = tag;
+    let tagBg = 'rgba(14, 165, 233, 0.22)';
+    let tagFg = '#38bdf8';
+
+    if (state === 'CRITICAL') {
+      borderColor = '#ef4444';
+      badgeTag = 'CRITICAL ALERT';
+      tagBg = 'rgba(239, 68, 68, 0.35)';
+      tagFg = '#f87171';
+    } else if (state === 'WARNING') {
+      borderColor = '#f59e0b';
+      badgeTag = 'CORROBORATING';
+      tagBg = 'rgba(245, 158, 11, 0.35)';
+      tagFg = '#fbbf24';
+    } else if (state === 'WATCH') {
+      borderColor = '#38bdf8';
+      badgeTag = 'WATCH ACTIVE';
+      tagBg = 'rgba(56, 189, 248, 0.35)';
+      tagFg = '#7dd3fc';
+    }
+
+    // Outer frosted container
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.90)';
+    ctx.beginPath();
+    ctx.roundRect(8, 8, canvas.width - 16, canvas.height - 16, 18);
+    ctx.fill();
+
+    // Glowing border
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = borderColor;
+    ctx.stroke();
+
+    // Title: e.g. "FLOOD NODE 1"
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(title, 24, 46);
+
+    // Minimal details: e.g. "MOUNTAIN RUNOFF GAUGE · NODE #1"
+    ctx.font = '500 17px monospace';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(subtitle, 24, 80);
+
+    // Status pill
+    ctx.fillStyle = tagBg;
+    ctx.beginPath();
+    ctx.roundRect(24, 98, 230, 36, 10);
+    ctx.fill();
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = tagFg;
+    ctx.fillText(badgeTag, 36, 122);
+
+    // Microchip hardware tag
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.beginPath();
+    ctx.roundRect(canvas.width - 188, 98, 164, 36, 10);
+    ctx.fill();
+    ctx.font = '600 15px monospace';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText('ESP32-S3 LoRa', canvas.width - 176, 122);
+  }
+
   function buildPrototypeFieldNodes(scene: THREE.Scene) {
+    nodeBadgesMapRef.current.clear();
+
     simulationEngine.prototypeNodes.forEach(node => {
       if (node.id === 'NODE-SUPERIOR') return; // Dedicated 14m Watch Tower mesh handles NODE-SUPERIOR
       const nodeGroup = new THREE.Group();
       const nodeElevation = getMountainTerrainElevation(node.position[0], node.position[2]);
       nodeGroup.position.set(node.position[0], nodeElevation, node.position[2]);
       nodeGroup.userData = { nodeId: node.id };
-
-      // ==========================================
-      // SECTOR 4: NODE-4 hardware is now mounted on the Watch Tower roof
-      // The 20m standalone lattice mast has been removed.
-      // ==========================================
-      if (node.id === 'NODE-4') {
-        // Hardware is integrated into buildWatchTowerMesh; nothing to build here.
-        // Register the node marker pointing at the Watch Tower group so
-        // selection halos and LoRa packets route correctly.
-        scene.add(nodeGroup); // empty group at NODE-4's registered position
-        nodeMarkersRef.current.set(node.id, nodeGroup);
-        return;
-      }
-
 
       const mastMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.3 });
       const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.2, 8), mastMat);
@@ -3565,22 +3873,37 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       solar.rotation.x = Math.PI / 7;
       nodeGroup.add(solar);
 
-      // Sensor-specific attachments
+      // SENSOR-SPECIFIC HARDWARE ATTACHMENTS
       if (node.id === 'NODE-1') {
-        nodeGroup.rotation.y = -Math.PI / 4; // Face across the lake surface
-        // Underwater anchoring piling collar rising out of the water
+        // Flood Node 2: Valley Embankment Water Horn & Optical Rain Gauge
+        nodeGroup.rotation.y = -Math.PI / 4;
         const pileMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, flatShading: true });
         const pileMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.7, 8), pileMat);
-        pileMesh.position.set(0, 0.35, 0); // Spans from lakebed to just above water surface
+        pileMesh.position.set(0, 0.35, 0);
         pileMesh.castShadow = true;
         nodeGroup.add(pileMesh);
 
         const sensorHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 0.28, 8), mastMat);
         sensorHorn.position.set(0, 0.85, 0.28);
-        sensorHorn.rotation.x = Math.PI / 6; // Angled down toward water
+        sensorHorn.rotation.x = Math.PI / 6;
         nodeGroup.add(sensorHorn);
+      } else if (node.id === 'NODE-FLOOD-1') {
+        // Flood Node 1: Upstream Mountain Runoff HC-SR04 Transducer & Canyon Rain Gauge
+        nodeGroup.rotation.y = Math.PI / 6;
+        const cliffMount = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.5), mastMat);
+        cliffMount.position.set(0, 0.4, -0.2);
+        nodeGroup.add(cliffMount);
+
+        const runoffTransducer = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.05, 0.32, 8), mastMat);
+        runoffTransducer.position.set(0, 0.75, 0.3);
+        runoffTransducer.rotation.x = Math.PI / 5;
+        nodeGroup.add(runoffTransducer);
+
+        const rainFunnel = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.22, 8), mastMat);
+        rainFunnel.position.set(-0.25, 2.1, 0);
+        nodeGroup.add(rainFunnel);
       } else if (node.id === 'NODE-3') {
-        // Seismic Geophone anchor probe & rockfall sensor housing mounted on ground anchor
+        // Landslide Node 1: Top Node Escarpment Geophone & Soil Saturation Stake
         const geophoneHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.38, 8), mastMat);
         geophoneHousing.position.set(0, 0.2, 0.22);
         nodeGroup.add(geophoneHousing);
@@ -3589,11 +3912,26 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         soilProbe.rotation.x = Math.PI;
         soilProbe.position.set(0, -0.15, 0.22);
         nodeGroup.add(soilProbe);
-      } else {
+      } else if (node.id === 'NODE-LANDSLIDE-2') {
+        // Landslide Node 2: Runout MPU-6050 Inclinometer Box & Geophone Stake
+        const inclinometerBox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.2), mastMat);
+        inclinometerBox.position.set(0, 0.35, 0.22);
+        nodeGroup.add(inclinometerBox);
+
+        const runoutStake = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.4, 6), mastMat);
+        runoutStake.rotation.x = Math.PI;
+        runoutStake.position.set(0, -0.1, 0.22);
+        nodeGroup.add(runoutStake);
+      } else if (node.id === 'NODE-2') {
+        // Forest Fire Node 1: Smoke Snorkel, Optical IR Flame Window & BME688
         const smokeSnorkel = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8), mastMat);
         smokeSnorkel.position.set(0, 1.8, -0.2);
         smokeSnorkel.name = 'smokeSnorkel';
         nodeGroup.add(smokeSnorkel);
+
+        const flameWindow = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
+        flameWindow.position.set(0, 1.25, 0.2);
+        nodeGroup.add(flameWindow);
 
         const intakeAuraGeo = new THREE.RingGeometry(0.12, 0.35, 16);
         intakeAuraGeo.rotateX(-Math.PI / 2);
@@ -3607,6 +3945,16 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         intakeAura.position.set(0, 1.95, -0.2);
         intakeAura.name = 'intakeAura';
         nodeGroup.add(intakeAura);
+      } else {
+        // Forest Fire Node 2 (NODE-FIRE-2): Deep Timber Canopy Optical Flame Sensor & MQ-135 Gas
+        const canopyFlameDome = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfb923c }));
+        canopyFlameDome.position.set(0, 1.3, 0.2);
+        nodeGroup.add(canopyFlameDome);
+
+        const gasSnorkel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.26, 8), mastMat);
+        gasSnorkel.position.set(0, 1.8, -0.18);
+        gasSnorkel.name = 'smokeSnorkel';
+        nodeGroup.add(gasSnorkel);
       }
 
       // LED Beacon
@@ -3631,9 +3979,343 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       halo.visible = false;
       nodeGroup.add(halo);
 
+      // 3D FLOATING HOLOGRAPHIC BILLBOARD HUD LABEL
+      // Visible at all times in 3D (Sprite with CanvasTexture), showing node name and minimal details
+      const badgeInfo = getNodeBadgeInfo(node);
+      const badgeCanvas = document.createElement('canvas');
+      badgeCanvas.width = 512;
+      badgeCanvas.height = 160;
+      renderBadgeCanvas(badgeCanvas, badgeInfo.title, badgeInfo.subtitle, badgeInfo.tag, badgeInfo.color, node.state);
+
+      const badgeTex = new THREE.CanvasTexture(badgeCanvas);
+      badgeTex.minFilter = THREE.LinearFilter;
+      const badgeMat = new THREE.SpriteMaterial({ map: badgeTex, transparent: true, depthTest: false });
+      const badgeSprite = new THREE.Sprite(badgeMat);
+      badgeSprite.scale.set(6.4, 2.0, 1);
+      badgeSprite.position.set(0, 3.25, 0); // Positioned comfortably above the solar canopy
+      badgeSprite.renderOrder = 999;
+      nodeGroup.add(badgeSprite);
+
+      nodeBadgesMapRef.current.set(node.id, {
+        sprite: badgeSprite,
+        canvas: badgeCanvas,
+        ctx: badgeCanvas.getContext('2d')!,
+        texture: badgeTex,
+        title: badgeInfo.title,
+        details: badgeInfo.subtitle,
+        accentColor: badgeInfo.color,
+        lastState: node.state
+      });
+
       scene.add(nodeGroup);
       nodeMarkersRef.current.set(node.id, nodeGroup);
     });
+  }
+
+  // ==========================================
+  // REALISTIC ALPINE MOUNTAIN RANGE & CASCADE WATER SYSTEM
+  // Mountains extending from X: -35.2, Z: -72.0 to X: 53.3, Z: -70.4
+  // Modeled after the reference photo with craggy cliffs, rock buttresses,
+  // stepped waterfalls, and mountain torrents.
+  // When rainfall or thunderstorm occurs, excess water cascades down
+  // from these mountains directly into the river causing river flooding!
+  // ==========================================
+  function buildRealisticMountainWaterSystem(scene: THREE.Scene) {
+    const mtnWaterGroup = new THREE.Group();
+    mtnWaterGroup.name = 'mountainWaterAndTerrainSystem';
+
+    // 1. DEDICATED REALISTIC 3D MOUNTAIN CRAGS & ROCK FORMATIONS
+    // Placed along the specified line from X: -35.2, Z: -72.0 to X: 53.3, Z: -70.4
+    const cragSlateMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      roughness: 0.92,
+      metalness: 0.08,
+      flatShading: true
+    });
+    const cragGraniteMat = new THREE.MeshStandardMaterial({
+      color: 0x57534e,
+      roughness: 0.88,
+      metalness: 0.05,
+      flatShading: true
+    });
+    const snowCouloirMat = new THREE.MeshStandardMaterial({
+      color: 0xf1f5f9,
+      roughness: 0.65,
+      metalness: 0.12,
+      flatShading: true
+    });
+
+    // Generate rugged 3D mountain buttresses along the range
+    // Flanking summits frame the canyon on west and east, leaving the river corridor completely clear
+    const buttressCoords = [
+      { x: -35.2, z: -72.0, h: 26.0, r: 8.5 },
+      { x: -28.0, z: -73.5, h: 32.0, r: 9.0 },
+      { x: -21.0, z: -72.5, h: 38.0, r: 10.5 }, // Western pyramid peak
+      { x: -12.0, z: -71.5, h: 33.0, r: 9.0 },
+      { x: -3.0,  z: -73.0, h: 35.0, r: 8.5 },
+      { x: 3.5,   z: -73.5, h: 36.0, r: 7.0 },  // West canyon rim peak (well west of river corridor)
+      { x: 13.5,  z: -78.0, h: 44.0, r: 6.5 },  // Distant central horn deep behind headwaters
+      { x: 24.5,  z: -73.5, h: 36.0, r: 7.0 },  // East canyon rim peak (well east of river corridor)
+      { x: 33.0,  z: -71.0, h: 33.0, r: 9.0 },
+      { x: 43.0,  z: -71.5, h: 36.0, r: 10.0 }, // Eastern bastion
+      { x: 53.3,  z: -70.4, h: 24.0, r: 8.5 }   // Eastern anchor
+    ];
+
+    buttressCoords.forEach((b, idx) => {
+      // Massive angular rock pyramid / spire
+      const spireGeo = new THREE.ConeGeometry(b.r, b.h, 6, 4);
+      spireGeo.rotateY((idx * 0.75) % Math.PI);
+      const spireMesh = new THREE.Mesh(spireGeo, idx % 2 === 0 ? cragGraniteMat : cragSlateMat);
+      spireMesh.position.set(b.x, b.h * 0.48, b.z);
+      spireMesh.castShadow = true;
+      spireMesh.receiveShadow = true;
+      mtnWaterGroup.add(spireMesh);
+
+      // Flanking stepped rock ledges (strictly outside river corridor)
+      for (let s = 0; s < 3; s++) {
+        const lx = b.x + (s === 0 ? -b.r * 0.55 : s === 1 ? b.r * 0.55 : 0);
+        const lz = b.z + (s === 2 ? 3.5 : -2.5);
+        if (lx >= 8.0 && lx <= 20.5 && lz >= -66.5 && lz <= -44.0) continue;
+        const lh = b.h * (0.45 + s * 0.15);
+        const ledgeGeo = new THREE.DodecahedronGeometry(b.r * 0.42, 1);
+        ledgeGeo.scale(1.2, 1.8, 1.0);
+        const ledgeMesh = new THREE.Mesh(ledgeGeo, cragSlateMat);
+        ledgeMesh.position.set(lx, lh * 0.5, lz);
+        ledgeMesh.castShadow = true;
+        mtnWaterGroup.add(ledgeMesh);
+      }
+    });
+
+    // 2. DEDICATED RIVER CHANNEL FLOWING FROM (X: 11, Z: -64.5 to X: 15.4, Z: -63.6) TO (X: 10.3, Z: -46.1 to X: 17.9, Z: -46.1)
+    // Custom parametric Quad Mesh conforming precisely to the user-specified bank coordinates
+    const segsU = 24; // width divisions (Left Bank to Right Bank)
+    const segsV = 48; // length divisions (Upstream Z: -64.5 down to Downstream Z: -46.1)
+    const vertCount = (segsU + 1) * (segsV + 1);
+
+    const riverChannelGeo = new THREE.BufferGeometry();
+    const rPositions = new Float32Array(vertCount * 3);
+    const rColors = new Float32Array(vertCount * 3);
+    const rUvs = new Float32Array(vertCount * 2);
+    const rIndices: number[] = [];
+
+    const baseRivX = new Float32Array(vertCount);
+    const baseRivY = new Float32Array(vertCount);
+    const baseRivZ = new Float32Array(vertCount);
+
+    let vIdx = 0;
+    for (let iv = 0; iv <= segsV; iv++) {
+      const tv = iv / segsV; // 0 at upstream (-64.5 / -63.6), 1 at downstream (-46.1)
+      const leftX = 11.0 + (10.3 - 11.0) * tv;
+      const leftZ = -64.5 + (-46.1 - (-64.5)) * tv;
+      const rightX = 15.4 + (17.9 - 15.4) * tv;
+      const rightZ = -63.6 + (-46.1 - (-63.6)) * tv;
+
+      // Water elevation smoothly cascading from 4.8m down to -0.65m at the valley river confluence
+      const waterY = -0.65 + (4.8 - (-0.65)) * Math.pow(1.0 - tv, 1.30);
+
+      for (let iu = 0; iu <= segsU; iu++) {
+        const tu = iu / segsU; // 0 at left bank, 1 at right bank
+        const px = leftX + (rightX - leftX) * tu;
+        const pz = leftZ + (rightZ - leftZ) * tu;
+        // Minor natural convex water surface profile (slightly higher in central deep flow)
+        const py = waterY + Math.sin(tu * Math.PI) * 0.035;
+
+        rPositions[vIdx * 3] = px;
+        rPositions[vIdx * 3 + 1] = py;
+        rPositions[vIdx * 3 + 2] = pz;
+
+        baseRivX[vIdx] = px;
+        baseRivY[vIdx] = py;
+        baseRivZ[vIdx] = pz;
+
+        rUvs[vIdx * 2] = tu;
+        rUvs[vIdx * 2 + 1] = tv;
+
+        // Color shading:
+        // Deep translucent turquoise channel in center; brilliant white foam along banks & steeper upper steps
+        const distFromBank = Math.min(tu, 1.0 - tu);
+        let foam = 0.10;
+        if (distFromBank < 0.20) {
+          foam = 0.55 + (0.20 - distFromBank) * 2.0;
+        }
+        if (tv < 0.38) {
+          // Upper rapid cascades have stronger churning foam
+          foam = Math.max(foam, 0.40 + (0.38 - tv) * 0.7);
+        }
+        foam = Math.min(1.0, foam);
+
+        rColors[vIdx * 3]     = THREE.MathUtils.lerp(0.04, 0.96, foam);
+        rColors[vIdx * 3 + 1] = THREE.MathUtils.lerp(0.68, 0.99, foam);
+        rColors[vIdx * 3 + 2] = THREE.MathUtils.lerp(0.85, 1.00, foam);
+
+        vIdx++;
+      }
+    }
+
+    for (let iv = 0; iv < segsV; iv++) {
+      for (let iu = 0; iu < segsU; iu++) {
+        const a = iv * (segsU + 1) + iu;
+        const b = a + 1;
+        const c = a + (segsU + 1);
+        const d = c + 1;
+        rIndices.push(a, c, b);
+        rIndices.push(b, c, d);
+      }
+    }
+
+    riverChannelGeo.setAttribute('position', new THREE.BufferAttribute(rPositions, 3));
+    riverChannelGeo.setAttribute('color', new THREE.BufferAttribute(rColors, 3));
+    riverChannelGeo.setAttribute('uv', new THREE.BufferAttribute(rUvs, 2));
+    riverChannelGeo.setIndex(rIndices);
+    riverChannelGeo.computeVertexNormals();
+
+    const riverChannelMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.08,
+      metalness: 0.16,
+      transparent: true,
+      opacity: 0.94,
+      flatShading: false,
+      side: THREE.DoubleSide
+    });
+
+    const riverChannelMesh = new THREE.Mesh(riverChannelGeo, riverChannelMat);
+    riverChannelMesh.name = 'mountainRiverChannel';
+    mtnWaterGroup.add(riverChannelMesh);
+
+    // Matching underlying sandy riverbed shelf underneath the river water
+    const bedPositions = new Float32Array(vertCount * 3);
+    for (let i = 0; i < vertCount; i++) {
+      const tu = rUvs[i * 2];
+      const bedDepth = 0.85 * (1.0 - Math.pow(2.0 * tu - 1.0, 2));
+      bedPositions[i * 3]     = baseRivX[i];
+      bedPositions[i * 3 + 1] = baseRivY[i] - bedDepth;
+      bedPositions[i * 3 + 2] = baseRivZ[i];
+    }
+    const riverBedGeo = new THREE.BufferGeometry();
+    riverBedGeo.setAttribute('position', new THREE.BufferAttribute(bedPositions, 3));
+    riverBedGeo.setIndex(rIndices);
+    riverBedGeo.computeVertexNormals();
+    const bedMat = new THREE.MeshStandardMaterial({
+      color: 0xb59972,
+      roughness: 0.90,
+      flatShading: true
+    });
+    const riverBedMesh = new THREE.Mesh(riverBedGeo, bedMat);
+    riverBedMesh.receiveShadow = true;
+    mtnWaterGroup.add(riverBedMesh);
+
+    // 3. NATURAL RIVERBANK BOULDERS & SHORELINE STONES
+    // Weathered alpine river stones lining the outer banks of the river
+    const riverBoulderMat1 = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.88, flatShading: true });
+    const riverBoulderMat2 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85, flatShading: true });
+    const numBankBoulders = 28;
+    for (let b = 0; b < numBankBoulders; b++) {
+      const tb = b / (numBankBoulders - 1);
+      const isLeft = b % 2 === 0;
+      const bLeftX = 11.0 + (10.3 - 11.0) * tb;
+      const bLeftZ = -64.5 + (-46.1 - (-64.5)) * tb;
+      const bRightX = 15.4 + (17.9 - 15.4) * tb;
+      const bRightZ = -63.6 + (-46.1 - (-63.6)) * tb;
+
+      const offsetDist = 0.6 + ((b * 7) % 5) * 0.18;
+      const bx = isLeft ? (bLeftX - offsetDist) : (bRightX + offsetDist);
+      const bz = isLeft ? bLeftZ : bRightZ;
+      const by = getMountainTerrainElevation(bx, bz);
+
+      const bRadius = 0.35 + ((b * 13) % 7) * 0.08;
+      const boulderGeo = new THREE.DodecahedronGeometry(bRadius, 0);
+      const boulderMesh = new THREE.Mesh(boulderGeo, b % 2 === 0 ? riverBoulderMat1 : riverBoulderMat2);
+      boulderMesh.position.set(bx, by + bRadius * 0.35, bz);
+      boulderMesh.rotation.set((b * 1.3) % Math.PI, (b * 0.8) % Math.PI, (b * 0.5) % Math.PI);
+      boulderMesh.castShadow = true;
+      boulderMesh.receiveShadow = true;
+      mtnWaterGroup.add(boulderMesh);
+    }
+
+    // Register this primary river into mountainStreamsRef for dynamic wave & downhill velocity updates
+    mountainStreamsRef.current = [
+      {
+        mesh: riverChannelMesh,
+        basePos: { x: baseRivX, y: baseRivY, z: baseRivZ },
+        wColors: rColors,
+        flowDirection: { x: 0.9, z: 18.4 },
+        baseSpeed: 2.2,
+        baseScale: { x: 1.0, y: 1.0, z: 1.0 }
+      }
+    ];
+
+    // 4. STEPPED RAPIDS CASCADE PLANES & FOAM APRONS
+    const rapidsSteps = [
+      { tv: 0.20, width: 4.8, height: 1.2 },
+      { tv: 0.48, width: 5.6, height: 1.1 },
+      { tv: 0.78, width: 6.8, height: 0.9 }
+    ];
+
+    mountainWaterfallsRef.current = [];
+
+    rapidsSteps.forEach((rp, rpIdx) => {
+      const tv = rp.tv;
+      const lx = 11.0 + (10.3 - 11.0) * tv;
+      const lz = -64.5 + (-46.1 - (-64.5)) * tv;
+      const rx = 15.4 + (17.9 - 15.4) * tv;
+      const rz = -63.6 + (-46.1 - (-63.6)) * tv;
+      const cx = (lx + rx) * 0.5;
+      const cz = (lz + rz) * 0.5;
+      const waterY = -0.65 + (4.8 - (-0.65)) * Math.pow(1.0 - tv, 1.30);
+
+      const rpGeo = new THREE.PlaneGeometry(rp.width, rp.height, 8, 4);
+      rpGeo.rotateX(-Math.PI * 0.35); // Sloped rapid apron
+      const rpMat = new THREE.MeshStandardMaterial({
+        color: 0xa5f3fc,
+        emissive: 0x0891b2,
+        emissiveIntensity: 0.40,
+        roughness: 0.12,
+        metalness: 0.18,
+        transparent: true,
+        opacity: 0.88,
+        side: THREE.DoubleSide
+      });
+      const rpMesh = new THREE.Mesh(rpGeo, rpMat);
+      rpMesh.position.set(cx, waterY + 0.05, cz);
+      rpMesh.name = `mountainRapidsStep_${rpIdx}`;
+      mtnWaterGroup.add(rpMesh);
+      mountainWaterfallsRef.current.push(rpMesh);
+    });
+
+    // 5. RAPIDS PLUNGE SPRAY & MOUNTAIN MIST PARTICLES
+    const sprayCount = 160;
+    const sprayGeo = new THREE.BufferGeometry();
+    const sprayPos = new Float32Array(sprayCount * 3);
+    for (let p = 0; p < sprayCount; p++) {
+      const step = rapidsSteps[p % rapidsSteps.length];
+      const tv = step.tv;
+      const lx = 11.0 + (10.3 - 11.0) * tv;
+      const lz = -64.5 + (-46.1 - (-64.5)) * tv;
+      const rx = 15.4 + (17.9 - 15.4) * tv;
+      const rz = -63.6 + (-46.1 - (-63.6)) * tv;
+      const cx = (lx + rx) * 0.5;
+      const cz = (lz + rz) * 0.5;
+      const waterY = -0.65 + (4.8 - (-0.65)) * Math.pow(1.0 - tv, 1.30);
+
+      sprayPos[p * 3]     = cx + (Math.random() - 0.5) * (step.width * 0.85);
+      sprayPos[p * 3 + 1] = waterY + 0.15 + Math.random() * 0.85;
+      sprayPos[p * 3 + 2] = cz + (Math.random() - 0.5) * 1.5;
+    }
+    sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos, 3));
+    const sprayMat = new THREE.PointsMaterial({
+      color: 0xe0f2fe,
+      size: 0.75,
+      transparent: true,
+      opacity: 0.60,
+      blending: THREE.AdditiveBlending
+    });
+    const sprayPoints = new THREE.Points(sprayGeo, sprayMat);
+    mtnWaterGroup.add(sprayPoints);
+    mountainSprayParticlesRef.current = sprayPoints;
+
+    scene.add(mtnWaterGroup);
+    mountainWaterGroupRef.current = mtnWaterGroup;
   }
 
   // ==========================================
@@ -5140,10 +5822,15 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const isLandslide = hazard?.type === 'LANDSLIDE' || hazard?.type === 'MULTI_HAZARD';
       const conf = simulationEngine.aggregatedHazardConfidence;
 
+      // Excess water cascading from northern mountains (X: -35.2, Z: -72.0 to X: 53.3, Z: -70.4)
+      // pours into the river headwaters at Z: -53.3 during rainfall or thunderstorm, causing the river to flood
+      const isMountainRunoffSurge = weather === 'STORM' || weather === 'HEAVY_RAIN' || weather === 'RAIN' || isExtremeRain;
+
       if (isFlood) {
-        targetWaterY = -0.65 + conf * 1.55; // Rises into low-lying village floodplain!
-      } else if (isExtremeRain) {
-        targetWaterY = -0.65 + conf * 0.65; // Swells with catchment rainfall
+        targetWaterY = -0.65 + Math.max(conf * 1.55, 1.15); // Rises into low-lying village floodplain!
+      } else if (isMountainRunoffSurge) {
+        const surge = weather === 'STORM' ? 0.88 : weather === 'HEAVY_RAIN' ? 0.62 : 0.40;
+        targetWaterY = -0.65 + Math.max(conf * 0.75, surge); // Swells with mountain catchment torrents
       } else if (isLandslide) {
         // Soil and rolling rock entry pushes up river water level locally
         targetWaterY = -0.65 + Math.sin(time * 3.5) * 0.10 * conf + conf * 0.22;
@@ -6225,6 +6912,101 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           mesh.position.y = -ringProgress * 12.8 + Math.sin(ringProgress * Math.PI * 6 - time * 8) * 0.35;
         });
       }
+    }
+
+    // 9. UPDATE 3D FLOATING HOLOGRAPHIC BILLBOARD HUD LABELS FOR ALL FIELD NODES
+    simulationEngine.prototypeNodes.forEach(node => {
+      const handle = nodeBadgesMapRef.current.get(node.id);
+      if (handle && handle.lastState !== node.state) {
+        handle.lastState = node.state;
+        const info = getNodeBadgeInfo(node);
+        renderBadgeCanvas(handle.canvas, info.title, info.subtitle, info.tag, info.color, node.state);
+        handle.texture.needsUpdate = true;
+      }
+    });
+
+    // 10. REALISTIC MOUNTAIN WATER TORRENTS, WATERFALLS & SPRAY
+    // When there is rainfall or thunderstorm (or flood), excess water surges down from the northern mountains
+    const isRainingOrStorm = weather === 'RAIN' || weather === 'HEAVY_RAIN' || weather === 'STORM' || isExtremeRain || isFlood;
+    const mtnIntensity = isFlood ? 2.5 : (isRainingOrStorm ? 1.8 : 0.65);
+
+    if (mountainStreamsRef.current && mountainStreamsRef.current.length > 0) {
+      mountainStreamsRef.current.forEach((st) => {
+        const mesh = st.mesh;
+        const pos = mesh.geometry.attributes.position as THREE.BufferAttribute;
+        const cols = mesh.geometry.attributes.color as THREE.BufferAttribute;
+        const base = st.basePos;
+        const count = pos.count;
+        const speed = st.baseSpeed * (0.8 + mtnIntensity * 0.6);
+
+        // Scale stream width with excess water surge
+        const targetScaleX = isRainingOrStorm ? 1.35 : 1.0;
+        mesh.scale.x = THREE.MathUtils.lerp(mesh.scale.x, targetScaleX, 0.05);
+
+        for (let i = 0; i < count; i++) {
+          const bx = base.x[i];
+          const by = base.y[i];
+          const bz = base.z[i];
+
+          // Downhill torrent waves
+          const wavePhase = (bx * 1.5 + bz * 2.2) - time * speed * 3.5;
+          const waveH = Math.sin(wavePhase) * (0.08 + mtnIntensity * 0.12);
+          const ripple = Math.cos(bx * 4.2 - time * speed * 5.0) * (0.03 + mtnIntensity * 0.05);
+
+          pos.setXYZ(i, bx, by + waveH + ripple, bz);
+
+          // White foaming torrent highlights when surging down rocks
+          let foam = 0.15;
+          if (waveH + ripple > 0.04) {
+            foam = Math.min(1.0, 0.45 + (waveH + ripple) * 4.0 * mtnIntensity);
+          }
+          if (isRainingOrStorm) {
+            foam = Math.min(1.0, foam + 0.35);
+          }
+
+          // Same turquoise water palette blending into brilliant white foam
+          const r = THREE.MathUtils.lerp(0.05, 0.96, foam);
+          const g = THREE.MathUtils.lerp(0.70, 0.99, foam);
+          const b = THREE.MathUtils.lerp(0.86, 1.00, foam);
+          cols.setXYZ(i, r, g, b);
+        }
+        pos.needsUpdate = true;
+        cols.needsUpdate = true;
+      });
+    }
+
+    // Animate vertical waterfall drops
+    if (mountainWaterfallsRef.current && mountainWaterfallsRef.current.length > 0) {
+      mountainWaterfallsRef.current.forEach((wf, wfIdx) => {
+        const mat = wf.material as THREE.MeshStandardMaterial;
+        const plungePulse = Math.sin(time * (18 + wfIdx * 4)) * 0.15;
+        mat.opacity = THREE.MathUtils.lerp(mat.opacity, isRainingOrStorm ? 0.96 : 0.82, 0.08);
+        mat.emissiveIntensity = isRainingOrStorm ? (0.45 + plungePulse) : 0.25;
+        wf.scale.x = THREE.MathUtils.lerp(wf.scale.x, isRainingOrStorm ? 1.3 : 1.0, 0.05);
+      });
+    }
+
+    // Animate mountain plunge spray particles
+    if (mountainSprayParticlesRef.current) {
+      mountainSprayParticlesRef.current.visible = true;
+      const spMat = mountainSprayParticlesRef.current.material as THREE.PointsMaterial;
+      spMat.opacity = THREE.MathUtils.lerp(spMat.opacity, isRainingOrStorm ? 0.92 : 0.38, 0.08);
+      spMat.size = THREE.MathUtils.lerp(spMat.size, isRainingOrStorm ? 1.35 : 0.80, 0.08);
+
+      const spPos = mountainSprayParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < spPos.count * 3; i += 3) {
+        spPos.array[i + 1] += (isRainingOrStorm ? 0.065 : 0.025); // rise Y
+        spPos.array[i] += Math.sin(time * 8 + i) * 0.015;
+        spPos.array[i + 2] += Math.cos(time * 6 + i) * 0.015;
+
+        // Reset if too high
+        if (spPos.array[i + 1] > 28.0) {
+          spPos.array[i + 1] = 1.0 + Math.random() * 4.0;
+          spPos.array[i] = 15.5 + (Math.random() - 0.5) * 4.0;
+          spPos.array[i + 2] = -58.0 + (Math.random() - 0.5) * 12.0;
+        }
+      }
+      spPos.needsUpdate = true;
     }
   }
 

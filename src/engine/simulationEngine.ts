@@ -25,43 +25,73 @@ import { soundManager } from '../audio/soundEffects';
 // LOCAL COMMAND CENTER POSITION in 3D scene (Rugged Workstation with integrated LoRa Transceiver)
 export const LOCAL_COMPUTER_POSITION: [number, number, number] = [0, 2.0, 0];
 
-// EXACT PHYSICAL PROTOTYPE ARCHITECTURE: 2 × ESP32-S3 + SX1262 LoRa
+// EXACT PHYSICAL PROTOTYPE ARCHITECTURE: ESP32-S3 + SX1262 LoRa Edge Mesh + Superior Hub
 export const PROTOTYPE_NODES: SensorNode[] = [
+  // 1. LANDSLIDE DETECTION NODES
   {
-    id: 'NODE-1',
-    name: 'Sector 1 — Floodplain Station',
-    role: 'River Corridor & Flood / Meteorological Watch',
+    id: 'NODE-3', // Landslide Node 1
+    name: 'Landslide Node 1',
+    role: 'Top Node #1 of Landslide Detection · Escarpment Geophone & Soil Saturation Watch',
     hardware: 'ESP32-S3 + SX1262',
     isPhysicalPrototype: true,
-    zone: 'RIVER',
-    position: [10.6, -0.63, 17.9],
+    zone: 'HILLSIDE',
+    position: [-35.7, 16.84, 41.7], // X = -35.7, Z = 41.7
     nodeHealth: 'OPERATIONAL',
-    overallSensorTrustPct: 95,
+    overallSensorTrustPct: 96,
     localHazardConfidence: 0.04,
     state: 'NORMAL',
-    lastCommunicationTime: Date.now() - 1100,
+    lastCommunicationTime: Date.now() - 900,
     samplingRateHz: 1.0,
-    batteryPct: 95,
-    batteryVoltage: 3.94,
+    batteryPct: 98,
+    batteryVoltage: 3.98,
     loraStatus: 'CONNECTED',
     offlineQueue: [],
     isReSensing: false,
     isCorroborating: false,
     sensors: [
-      { type: 'WATER_LEVEL_ULTRASONIC', label: 'HC-SR04 Water Level', value: 1.25, unit: 'm', baseline: 1.20, thresholdWatch: 2.80, thresholdWarning: 4.20, thresholdCritical: 5.40, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.40, lastTestedTime: Date.now() },
-      { type: 'RAINFALL_OPTICAL', label: 'Optical Rain Sensor', value: 0.0, unit: 'mm/h', baseline: 0.0, thresholdWatch: 22.0, thresholdWarning: 45.0, thresholdCritical: 75.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
-      { type: 'TEMP_BME688', label: 'BME688 Corridor Temp', value: 23.5, unit: '°C', baseline: 23.5, thresholdWatch: 36.0, thresholdWarning: 48.0, thresholdCritical: 60.0, sensorTrustPct: 97, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() },
-      { type: 'HUMIDITY_DHT', label: 'DHT22 Floodplain Humidity', value: 68.0, unit: '%', baseline: 68.0, thresholdWatch: 85.0, thresholdWarning: 92.0, thresholdCritical: 98.0, sensorTrustPct: 94, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
+      { type: 'VIBRATION_GEOPHONE', label: 'Seismic Geophone', value: 0.02, unit: 'g', baseline: 0.02, thresholdWatch: 0.30, thresholdWarning: 0.75, thresholdCritical: 1.40, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.35, lastTestedTime: Date.now() },
+      { type: 'HUMIDITY_DHT', label: 'Soil Saturation Probe', value: 34.0, unit: '%', baseline: 32.0, thresholdWatch: 70.0, thresholdWarning: 85.0, thresholdCritical: 95.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
+      { type: 'RAINFALL_OPTICAL', label: 'Slope Precipitation Gauge', value: 0.0, unit: 'mm/h', baseline: 0.0, thresholdWatch: 20.0, thresholdWarning: 40.0, thresholdCritical: 70.0, sensorTrustPct: 97, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.20, lastTestedTime: Date.now() },
+      { type: 'TEMP_BME688', label: 'BME688 Escarpment Temp', value: 21.8, unit: '°C', baseline: 22.0, thresholdWatch: 35.0, thresholdWarning: 45.0, thresholdCritical: 55.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
     ]
   },
   {
-    id: 'NODE-2',
-    name: 'Sector 2 — Forest Boundary Station',
-    role: 'Forest Boundary, Wildfire & Slope Stability Watch',
+    id: 'NODE-LANDSLIDE-2', // Landslide Node 2
+    name: 'Landslide Node 2',
+    role: 'Node #2 of Landslide Detection · Lower Slope Runout Corroboration & Inclinometer',
+    hardware: 'ESP32-S3 + SX1262',
+    isPhysicalPrototype: true,
+    zone: 'HILLSIDE',
+    position: [-9.0, 3.2, 34.7], // X: -9.0, Z: 34.7
+    nodeHealth: 'OPERATIONAL',
+    overallSensorTrustPct: 95,
+    localHazardConfidence: 0.03,
+    state: 'NORMAL',
+    lastCommunicationTime: Date.now() - 950,
+    samplingRateHz: 1.0,
+    batteryPct: 97,
+    batteryVoltage: 3.97,
+    loraStatus: 'CONNECTED',
+    offlineQueue: [],
+    isReSensing: false,
+    isCorroborating: false,
+    sensors: [
+      { type: 'VIBRATION_GEOPHONE', label: 'Runout Seismic Geophone', value: 0.01, unit: 'g', baseline: 0.01, thresholdWatch: 0.25, thresholdWarning: 0.65, thresholdCritical: 1.20, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.35, lastTestedTime: Date.now() },
+      { type: 'IMU_MPU6050', label: 'MPU-6050 Slope Inclinometer', value: 0.0, unit: 'deg', baseline: 0.0, thresholdWatch: 4.0, thresholdWarning: 8.0, thresholdCritical: 15.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
+      { type: 'HUMIDITY_DHT', label: 'Colluvium Moisture Sensor', value: 30.0, unit: '%', baseline: 28.0, thresholdWatch: 65.0, thresholdWarning: 80.0, thresholdCritical: 92.0, sensorTrustPct: 94, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.20, lastTestedTime: Date.now() },
+      { type: 'TEMP_BME688', label: 'BME688 Lower Terrace Temp', value: 22.4, unit: '°C', baseline: 22.0, thresholdWatch: 35.0, thresholdWarning: 45.0, thresholdCritical: 55.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
+    ]
+  },
+
+  // 2. FOREST FIRE DETECTION NODES
+  {
+    id: 'NODE-2', // Forest Fire Node 1
+    name: 'Forest Fire Node 1',
+    role: 'Node #1 of Forest Fire Detection · Forest Boundary Smoke & Thermal Sensor',
     hardware: 'ESP32-S3 + SX1262',
     isPhysicalPrototype: true,
     zone: 'FOREST',
-    position: [-16, 1.2, -12],
+    position: [-16.0, 1.2, -12.0], // X = -16.0, Z = -12.0
     nodeHealth: 'OPERATIONAL',
     overallSensorTrustPct: 94,
     localHazardConfidence: 0.05,
@@ -83,45 +113,18 @@ export const PROTOTYPE_NODES: SensorNode[] = [
     ]
   },
   {
-    id: 'NODE-3',
-    name: 'Sector 3 — Escarpment & Slope Station',
-    role: 'Mountain Slope, Soil Saturation & Seismic Watch',
+    id: 'NODE-FIRE-2', // Forest Fire Node 2
+    name: 'Forest Fire Node 2',
+    role: 'Node #2 of Forest Fire Detection · Deep Timber Flame Optical IR & Combustion Corroboration',
     hardware: 'ESP32-S3 + SX1262',
     isPhysicalPrototype: true,
-    zone: 'HILLSIDE',
-    position: [-35.7, 16.84, 41.7],
-    nodeHealth: 'OPERATIONAL',
-    overallSensorTrustPct: 96,
-    localHazardConfidence: 0.04,
-    state: 'NORMAL',
-    lastCommunicationTime: Date.now() - 900,
-    samplingRateHz: 1.0,
-    batteryPct: 98,
-    batteryVoltage: 3.98,
-    loraStatus: 'CONNECTED',
-    offlineQueue: [],
-    isReSensing: false,
-    isCorroborating: false,
-    sensors: [
-      { type: 'VIBRATION_GEOPHONE', label: 'Seismic Geophone', value: 0.02, unit: 'g', baseline: 0.02, thresholdWatch: 0.30, thresholdWarning: 0.75, thresholdCritical: 1.40, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.35, lastTestedTime: Date.now() },
-      { type: 'HUMIDITY_DHT', label: 'Soil Saturation Probe', value: 34.0, unit: '%', baseline: 32.0, thresholdWatch: 70.0, thresholdWarning: 85.0, thresholdCritical: 95.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
-      { type: 'RAINFALL_OPTICAL', label: 'Slope Precipitation Gauge', value: 0.0, unit: 'mm/h', baseline: 0.0, thresholdWatch: 20.0, thresholdWarning: 40.0, thresholdCritical: 70.0, sensorTrustPct: 97, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.20, lastTestedTime: Date.now() },
-      { type: 'TEMP_BME688', label: 'BME688 Escarpment Temp', value: 21.8, unit: '°C', baseline: 22.0, thresholdWatch: 35.0, thresholdWarning: 45.0, thresholdCritical: 55.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
-    ]
-  },
-  {
-    id: 'NODE-4',
-    name: 'Sector 4 — Watch Tower Atmospheric Station',
-    role: 'Tall 20m Atmospheric Mast at Watch Tower · SPS30 Laser PM2.5/PM10, MQ-135 Gas & Air Quality Watch',
-    hardware: 'ESP32-S3 + SX1262',
-    isPhysicalPrototype: true,
-    zone: 'URBAN',
-    position: [42.5, 16.5, 0.7],
+    zone: 'FOREST',
+    position: [-41.6, 2.5, -38.8], // X: -41.6, Z: -38.8
     nodeHealth: 'OPERATIONAL',
     overallSensorTrustPct: 95,
-    localHazardConfidence: 0.03,
+    localHazardConfidence: 0.04,
     state: 'NORMAL',
-    lastCommunicationTime: Date.now() - 850,
+    lastCommunicationTime: Date.now() - 1200,
     samplingRateHz: 1.0,
     batteryPct: 97,
     batteryVoltage: 3.97,
@@ -130,16 +133,74 @@ export const PROTOTYPE_NODES: SensorNode[] = [
     isReSensing: false,
     isCorroborating: false,
     sensors: [
-      { type: 'AIR_QUALITY_SPS30', label: 'SPS30 Laser PM2.5 / PM10 Particle Sensor', value: 14.5, unit: 'µg/m³', baseline: 14.0, thresholdWatch: 45.0, thresholdWarning: 85.0, thresholdCritical: 160.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.35, lastTestedTime: Date.now() },
-      { type: 'GAS_MQ135', label: 'MQ-135 Industrial Hazardous Air Gas Array', value: 32.0, unit: 'AQI', baseline: 30.0, thresholdWatch: 70.0, thresholdWarning: 140.0, thresholdCritical: 280.0, sensorTrustPct: 94, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
-      { type: 'SMOKE_MQ2', label: 'MQ-2 Industrial Flue & Hydrocarbon Detector', value: 18.0, unit: 'ppm', baseline: 16.0, thresholdWatch: 50.0, thresholdWarning: 120.0, thresholdCritical: 250.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.20, lastTestedTime: Date.now() },
-      { type: 'TEMP_BME688', label: 'BME688 Atmospheric Plume Temp & VOC', value: 22.4, unit: '°C', baseline: 22.0, thresholdWatch: 38.0, thresholdWarning: 50.0, thresholdCritical: 65.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
+      { type: 'FLAME_IR', label: 'Deep Timber IR Flame Sensor', value: 0, unit: 'state', baseline: 0, thresholdWatch: 0.5, thresholdWarning: 0.8, thresholdCritical: 1.0, sensorTrustPct: 94, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.35, lastTestedTime: Date.now() },
+      { type: 'SMOKE_MQ2', label: 'MQ-2 Combustion Smoke Sensor', value: 14.0, unit: 'ppm', baseline: 14.0, thresholdWatch: 50.0, thresholdWarning: 130.0, thresholdCritical: 260.0, sensorTrustPct: 93, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
+      { type: 'TEMP_BME688', label: 'BME688 Canopy Thermal Probe', value: 23.0, unit: '°C', baseline: 23.0, thresholdWatch: 38.0, thresholdWarning: 50.0, thresholdCritical: 66.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.20, lastTestedTime: Date.now() },
+      { type: 'GAS_MQ135', label: 'MQ-135 Carbon Monoxide & Gas', value: 28.0, unit: 'AQI', baseline: 28.0, thresholdWatch: 75.0, thresholdWarning: 150.0, thresholdCritical: 290.0, sensorTrustPct: 92, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
+    ]
+  },
+
+  // 3. FLOOD DETECTION NODES
+  {
+    id: 'NODE-FLOOD-1', // Flood Node 1
+    name: 'Flood Node 1',
+    role: 'Node #1 of Flood Detection · Upstream Mountain Runoff & River Surge Sensor',
+    hardware: 'ESP32-S3 + SX1262',
+    isPhysicalPrototype: true,
+    zone: 'RIVER',
+    position: [17.6, 0.45, -53.3], // X: 17.6, Z: -53.3 (upstream mountain gorge)
+    nodeHealth: 'OPERATIONAL',
+    overallSensorTrustPct: 96,
+    localHazardConfidence: 0.04,
+    state: 'NORMAL',
+    lastCommunicationTime: Date.now() - 1000,
+    samplingRateHz: 1.0,
+    batteryPct: 96,
+    batteryVoltage: 3.95,
+    loraStatus: 'CONNECTED',
+    offlineQueue: [],
+    isReSensing: false,
+    isCorroborating: false,
+    sensors: [
+      { type: 'WATER_LEVEL_ULTRASONIC', label: 'HC-SR04 Mountain Runoff Gauge', value: 1.15, unit: 'm', baseline: 1.10, thresholdWatch: 2.60, thresholdWarning: 3.90, thresholdCritical: 5.10, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.40, lastTestedTime: Date.now() },
+      { type: 'RAINFALL_OPTICAL', label: 'Gorge Catchment Optical Rain', value: 0.0, unit: 'mm/h', baseline: 0.0, thresholdWatch: 24.0, thresholdWarning: 48.0, thresholdCritical: 78.0, sensorTrustPct: 97, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
+      { type: 'TEMP_BME688', label: 'BME688 Mountain River Temp', value: 20.8, unit: '°C', baseline: 21.0, thresholdWatch: 34.0, thresholdWarning: 45.0, thresholdCritical: 58.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() },
+      { type: 'HUMIDITY_DHT', label: 'DHT22 Canyon Humidity', value: 72.0, unit: '%', baseline: 70.0, thresholdWatch: 86.0, thresholdWarning: 94.0, thresholdCritical: 99.0, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
     ]
   },
   {
+    id: 'NODE-1', // Flood Node 2
+    name: 'Flood Node 2',
+    role: 'Top Node #2 of Flood Detection · Valley Embankment & Inundation Corroboration',
+    hardware: 'ESP32-S3 + SX1262',
+    isPhysicalPrototype: true,
+    zone: 'RIVER',
+    position: [42.5, 1.2, 2.5], // X: 42.5, Y: 1.2, Z: 2.5 (Watch Tower base riverfront)
+    nodeHealth: 'OPERATIONAL',
+    overallSensorTrustPct: 95,
+    localHazardConfidence: 0.04,
+    state: 'NORMAL',
+    lastCommunicationTime: Date.now() - 1100,
+    samplingRateHz: 1.0,
+    batteryPct: 95,
+    batteryVoltage: 3.94,
+    loraStatus: 'CONNECTED',
+    offlineQueue: [],
+    isReSensing: false,
+    isCorroborating: false,
+    sensors: [
+      { type: 'WATER_LEVEL_ULTRASONIC', label: 'HC-SR04 Embankment Level', value: 1.25, unit: 'm', baseline: 1.20, thresholdWatch: 2.80, thresholdWarning: 4.20, thresholdCritical: 5.40, sensorTrustPct: 95, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.40, lastTestedTime: Date.now() },
+      { type: 'RAINFALL_OPTICAL', label: 'Optical Rain Sensor', value: 0.0, unit: 'mm/h', baseline: 0.0, thresholdWatch: 22.0, thresholdWarning: 45.0, thresholdCritical: 75.0, sensorTrustPct: 96, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.30, lastTestedTime: Date.now() },
+      { type: 'TEMP_BME688', label: 'BME688 Corridor Temp', value: 23.5, unit: '°C', baseline: 23.5, thresholdWatch: 36.0, thresholdWarning: 48.0, thresholdCritical: 60.0, sensorTrustPct: 97, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() },
+      { type: 'HUMIDITY_DHT', label: 'DHT22 Floodplain Humidity', value: 68.0, unit: '%', baseline: 68.0, thresholdWatch: 85.0, thresholdWarning: 92.0, thresholdCritical: 98.0, sensorTrustPct: 94, healthStatus: 'OK', isAnomaly: false, reSensingActive: false, weight: 0.15, lastTestedTime: Date.now() }
+    ]
+  },
+
+  // 4. SUPERIOR NODE: Watch Tower 01 Master Evidence Hub & 120dB Buzzer
+  {
     id: 'NODE-SUPERIOR',
     name: 'Watch Tower 01 — Superior ESP32 Node',
-    role: 'Master Evidence Fusion Hub & Village Alarm Siren',
+    role: 'Master Evidence Fusion Hub & 120dB Quad-Horn Village Buzzer / Siren',
     hardware: 'ESP32-S3 Dual-Core + SX1262 LoRa + 120dB Quad-Horn Buzzer',
     isPhysicalPrototype: true,
     zone: 'URBAN',
@@ -1137,66 +1198,107 @@ export class SimulationEngine {
     this.notify();
   }
 
+  public getNode(id: string): SensorNode | undefined {
+    if (id === 'NODE-FLOOD-2') return this.prototypeNodes.find(n => n.id === 'NODE-1');
+    if (id === 'NODE-FIRE-1') return this.prototypeNodes.find(n => n.id === 'NODE-2');
+    if (id === 'NODE-LANDSLIDE-1') return this.prototypeNodes.find(n => n.id === 'NODE-3');
+    return this.prototypeNodes.find(n => n.id === id);
+  }
+
   private propagateHazardToSensors() {
     if (!this.activeHazard) return;
 
     if (this.activeHazard.type === 'FLOOD' || this.activeHazard.type === 'EXTREME_RAIN') {
-      const node1 = this.prototypeNodes.find(n => n.id === 'NODE-1');
-      if (node1) {
-        node1.sensors.forEach(s => {
+      // 1. Flood Node 1 (X: 17.6, Z: -53.3, upstream mountain river gorge) detects surge first
+      const floodNode1 = this.getNode('NODE-FLOOD-1');
+      const floodNode2 = this.getNode('NODE-1'); // Flood Node 2 at [42.5, 1.2, 2.5]
+      if (floodNode1) {
+        floodNode1.sensors.forEach(s => {
           if (s.type === 'WATER_LEVEL_ULTRASONIC') {
-            s.value = 4.65;
+            s.value = 4.85;
             s.isAnomaly = true;
           }
           if (s.type === 'RAINFALL_OPTICAL') {
-            s.value = 65.0;
+            s.value = 68.0;
             s.isAnomaly = true;
           }
         });
-        node1.state = 'WATCH';
-        node1.localHazardConfidence = 0.58;
-        node1.isReSensing = true;
-        node1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst!
+        floodNode1.state = 'WATCH';
+        floodNode1.localHazardConfidence = 0.76;
+        floodNode1.isReSensing = true;
+        floodNode1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst!
 
         this.addLedgerEntry(
           'ANOMALY', 
-          'Node 01 ultrasonic water level threshold breached (4.65m > 4.20m)', 
-          'NODE-1', 
-          node1.overallSensorTrustPct, 
+          'FLOOD DETECTED BY NODE 1: Flood Node 1 (X: 17.6, Z: -53.3) ultrasonic water level breached (4.85m > 3.90m)', 
+          floodNode1.id, 
+          floodNode1.overallSensorTrustPct, 
           0.05, 
-          0.58, 
+          0.76, 
           'WATCH', 
-          'Ultrasonic distance drop indicates rapid water level rise. Adaptive re-sensing active.'
+          'Mountain runoff surge detected at upstream gorge. Clarifying event with Flood Node 2.'
         );
 
-        // Transmit LoRa Verify Request to Node 2 and telemetry alert to Superior Node at Watch Tower
-        this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', {
+        // Step 1: Flood Node 1 clarifies with Flood Node 2
+        this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', {
           event: 'FLOOD_PRELIM',
-          level_m: 4.65,
-          rain_mm_h: 65.0
+          water_m: 4.85,
+          rain_mm_h: 68.0
         });
-        this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-          event: 'FLOOD_PRELIM',
-          level_m: 4.65,
-          rain_mm_h: 65.0
-        });
-      }
 
-      // Node 2 corroborates rainfall/humidity
-      const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
-      if (node2) {
-        node2.sensors.forEach(s => {
-          if (s.type === 'HUMIDITY_DHT') {
-            s.value = 95.0;
-            s.isAnomaly = true;
+        // Step 2: Flood Node 2 clarifies and corroborates
+        setTimeout(() => {
+          if (floodNode2 && (this.activeHazard?.type === 'FLOOD' || this.activeHazard?.type === 'EXTREME_RAIN')) {
+            floodNode2.sensors.forEach(s => {
+              if (s.type === 'WATER_LEVEL_ULTRASONIC') {
+                s.value = 3.90;
+                s.isAnomaly = true;
+              }
+              if (s.type === 'HUMIDITY_DHT') {
+                s.value = 95.0;
+                s.isAnomaly = true;
+              }
+            });
+            floodNode2.isCorroborating = true;
+            floodNode2.state = 'WARNING';
+            floodNode2.localHazardConfidence = 0.89;
+
+            this.addLedgerEntry(
+              'NEIGHBOUR_RESPONSE',
+              'FLOOD CORROBORATION: Flood Node 2 (X: 42.5, Z: 2.5) confirmed downstream embankment surge (3.90m)',
+              floodNode2.id,
+              floodNode2.overallSensorTrustPct,
+              0.76,
+              0.94,
+              'CRITICAL',
+              'Downstream river corridor surge confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
+            );
+
+            // Clarification response sent back to Node 1
+            this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', {
+              status: 'CORROBORATED_SURGE',
+              water_m: 3.90
+            });
+
+            // Step 3: Packets transferred to Superior Node
+            this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'FLOOD_VERIFIED',
+              water_m: 4.85,
+              corroborated: 1
+            });
+            this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'FLOOD_CORROBORATION',
+              water_m: 3.90
+            });
           }
-        });
-        node2.isCorroborating = true;
+        }, 700);
       }
     } else if (this.activeHazard.type === 'FOREST_FIRE') {
-      const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
-      if (node2) {
-        node2.sensors.forEach(s => {
+      // 1. Forest Fire Node 1 (X: -16.0, Z: -12.0) detects smoke & heat first
+      const fireNode1 = this.getNode('NODE-2'); // Forest Fire Node 1
+      const fireNode2 = this.getNode('NODE-FIRE-2'); // Forest Fire Node 2 at [X: -41.6, Z: -38.8]
+      if (fireNode1) {
+        fireNode1.sensors.forEach(s => {
           if (s.type === 'SMOKE_MQ2') {
             s.value = 185.0;
             s.isAnomaly = true;
@@ -1210,32 +1312,174 @@ export class SimulationEngine {
             s.isAnomaly = true;
           }
         });
-        node2.state = 'WATCH';
-        node2.localHazardConfidence = 0.72;
-        node2.isReSensing = true;
-        node2.samplingRateHz = 5.0;
+        fireNode1.state = 'WATCH';
+        fireNode1.localHazardConfidence = 0.74;
+        fireNode1.isReSensing = true;
+        fireNode1.samplingRateHz = 5.0;
 
         this.addLedgerEntry(
           'ANOMALY',
-          'Node 02 smoke and thermal threshold breached (185 ppm, 49.5°C)',
-          'NODE-2',
-          node2.overallSensorTrustPct,
+          'FOREST FIRE DETECTED BY NODE 1: Forest Fire Node 1 (X: -16.0, Z: -12.0) detected smoke spike (185 ppm) and heat (49.5°C)',
+          fireNode1.id,
+          fireNode1.overallSensorTrustPct,
           0.05,
-          0.72,
+          0.74,
           'WATCH',
-          'Optical and electrochemical smoke spike accompanied by rapid ambient temperature climb.'
+          'Smoke and thermal anomaly confirmed. Clarifying event with Forest Fire Node 2.'
         );
 
-        this.dispatchLoRaPacket('NODE-2', 'NODE-1', 'VERIFY_REQUEST', {
+        // Step 1: Forest Fire Node 1 clarifies with Forest Fire Node 2
+        this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', {
           event: 'FIRE_PRELIM',
           smoke_ppm: 185.0,
           temp_c: 49.5
         });
-        this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-          event: 'FIRE_PRELIM',
-          smoke_ppm: 185.0,
-          temp_c: 49.5
+
+        // Step 2: Forest Fire Node 2 clarifies and corroborates
+        setTimeout(() => {
+          if (fireNode2 && this.activeHazard?.type === 'FOREST_FIRE') {
+            fireNode2.sensors.forEach(s => {
+              if (s.type === 'FLAME_IR') {
+                s.value = 1.0;
+                s.isAnomaly = true;
+              }
+              if (s.type === 'TEMP_BME688') {
+                s.value = 52.0;
+                s.isAnomaly = true;
+              }
+              if (s.type === 'SMOKE_MQ2') {
+                s.value = 145.0;
+                s.isAnomaly = true;
+              }
+            });
+            fireNode2.isCorroborating = true;
+            fireNode2.state = 'WARNING';
+            fireNode2.localHazardConfidence = 0.91;
+
+            this.addLedgerEntry(
+              'NEIGHBOUR_RESPONSE',
+              'FOREST FIRE CORROBORATION: Forest Fire Node 2 (X: -41.6, Z: -38.8) confirmed optical IR flame and 52.0°C combustion',
+              fireNode2.id,
+              fireNode2.overallSensorTrustPct,
+              0.74,
+              0.95,
+              'CRITICAL',
+              'Dual-node optical flame & smoke convergence. Transferring verified disaster packets to Superior Node at Watch Tower.'
+            );
+
+            // Clarification response sent back to Node 1
+            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
+              status: 'CORROBORATED_FLAME_ACTIVE',
+              flame_ir: 1.0,
+              temp_c: 52.0
+            });
+
+            // Step 3: Packets transferred to Superior Node
+            this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'FIRE_VERIFIED',
+              smoke_ppm: 185.0,
+              corroborated: 1
+            });
+            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'FIRE_CORROBORATION',
+              flame_ir: 1.0,
+              temp_c: 52.0
+            });
+          }
+        }, 700);
+      }
+    } else if (this.activeHazard.type === 'LANDSLIDE') {
+      // 1. Landslide Node 1 (X: -35.7, Z: 41.7) detects slope shear & geophone tremor first
+      const lsNode1 = this.getNode('NODE-3'); // Landslide Node 1
+      const lsNode2 = this.getNode('NODE-LANDSLIDE-2'); // Landslide Node 2 at [X: -9.0, Z: 34.7]
+      if (lsNode1) {
+        lsNode1.sensors.forEach(s => {
+          if (s.type === 'VIBRATION_GEOPHONE') {
+            s.value = 1.48; // Critical ground shock & sliding tremor
+            s.isAnomaly = true;
+            s.reSensingActive = true;
+          }
+          if (s.type === 'HUMIDITY_DHT') {
+            s.value = 94.0; // Critical soil pore-water saturation
+            s.isAnomaly = true;
+            s.reSensingActive = true;
+          }
+          if (s.type === 'RAINFALL_OPTICAL') {
+            s.value = 52.0; // Heavy antecedent mountain downpour
+            s.isAnomaly = true;
+          }
         });
+        lsNode1.state = 'WARNING';
+        lsNode1.localHazardConfidence = 0.92;
+        lsNode1.isReSensing = true;
+        lsNode1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst for ground motion
+
+        this.addLedgerEntry(
+          'ANOMALY',
+          'LANDSLIDE DETECTED BY NODE 1: Landslide Node 1 (X: -35.7, Z: 41.7) detected slope failure (1.48 g) & soil saturation (94%)',
+          lsNode1.id,
+          lsNode1.overallSensorTrustPct,
+          0.04,
+          0.92,
+          'WARNING',
+          'High-frequency seismic tremor detected at bedrock boulders. Clarifying event with Landslide Node 2.'
+        );
+
+        // Step 1: Landslide Node 1 clarifies with Landslide Node 2
+        this.dispatchLoRaPacket('NODE-3', 'NODE-LANDSLIDE-2', 'VERIFY_REQUEST', {
+          event: 'LANDSLIDE_PRELIM',
+          seismic_g: 1.48,
+          soil_sat: 94.0
+        });
+
+        // Step 2: Landslide Node 2 clarifies and corroborates
+        setTimeout(() => {
+          if (lsNode2 && this.activeHazard?.type === 'LANDSLIDE') {
+            lsNode2.sensors.forEach(s => {
+              if (s.type === 'VIBRATION_GEOPHONE') {
+                s.value = 0.95;
+                s.isAnomaly = true;
+              }
+              if (s.type === 'IMU_MPU6050') {
+                s.value = 11.4;
+                s.isAnomaly = true;
+              }
+            });
+            lsNode2.isCorroborating = true;
+            lsNode2.state = 'WARNING';
+            lsNode2.localHazardConfidence = 0.88;
+
+            this.addLedgerEntry(
+              'NEIGHBOUR_RESPONSE',
+              'LANDSLIDE CORROBORATION: Landslide Node 2 (X: -9.0, Z: 34.7) confirmed lower runout displacement (11.4° tilt, 0.95 g)',
+              lsNode2.id,
+              lsNode2.overallSensorTrustPct,
+              0.92,
+              0.95,
+              'CRITICAL',
+              'Dual-node slope slip confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
+            );
+
+            // Clarification response sent back to Node 1
+            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-3', 'VERIFY_RESPONSE', {
+              status: 'CORROBORATED_RUNOUT_SLIP',
+              seismic_g: 0.95,
+              tilt_deg: 11.4
+            });
+
+            // Step 3: Packets transferred to Superior Node
+            this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'LANDSLIDE_VERIFIED',
+              seismic_g: 1.48,
+              corroborated: 1
+            });
+            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+              event: 'LANDSLIDE_CORROBORATION',
+              seismic_g: 0.95,
+              tilt_deg: 11.4
+            });
+          }
+        }, 700);
       }
     } else if (this.activeHazard.type === 'AIR_QUALITY_EVENT') {
       const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
@@ -1264,21 +1508,15 @@ export class SimulationEngine {
 
         this.addLedgerEntry(
           'ANOMALY',
-          'AIR POLLUTION SMOKE BREACH: Node 02 MQ-2 Smoke (245 ppm) & MQ-135 Gas (275 AQI) detected dense particulate smoke plume',
+          'AIR POLLUTION SMOKE BREACH: Forest Fire Node 1 (245 ppm smoke, 275 AQI) detected dense particulate plume',
           'NODE-2',
           node2.overallSensorTrustPct,
           0.05,
           0.88,
           'WARNING',
-          'Intake snorkel optical and electrochemical sensors actively detecting heavy smoke. Adaptive 5 Hz burst sampling confirms sustained air pollution density.'
+          'Intake snorkel optical and electrochemical sensors actively detecting heavy smoke.'
         );
 
-        this.dispatchLoRaPacket('NODE-2', 'NODE-1', 'EVENT_ALERT', {
-          event: 'AIR_POLLUTION_SMOKE',
-          smoke_ppm: 245.0,
-          aqi: 275.0,
-          sensor: 'MQ-2_AND_MQ-135'
-        });
         this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
           event: 'AIR_POLLUTION_SMOKE',
           smoke_ppm: 245.0,
@@ -1286,49 +1524,7 @@ export class SimulationEngine {
         });
       }
 
-      // Atmospheric Air Pollution Station (Node 04) at Watch Tower detects industrial chemical plume drifting toward village
-      const node4 = this.prototypeNodes.find(n => n.id === 'NODE-4');
-      if (node4) {
-        node4.sensors.forEach(s => {
-          if (s.type === 'AIR_QUALITY_SPS30') {
-            s.value = 192.0; // µg/m³: critical air quality particulate breach
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'GAS_MQ135') {
-            s.value = 310.0; // AQI: severe particulate air pollution
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'SMOKE_MQ2') {
-            s.value = 185.0; // ppm: heavy industrial chimney flue
-            s.isAnomaly = true;
-          }
-        });
-        node4.state = 'WARNING';
-        node4.localHazardConfidence = 0.96;
-        node4.isReSensing = true;
-        node4.samplingRateHz = 5.0;
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'TALL AIR TOWER DETECTION (NODE 04): SPS30 (192 µg/m³) & MQ-135 (310 AQI) detected severe industrial air pollution plume drifting toward Watch Tower & Village',
-          'NODE-4',
-          node4.overallSensorTrustPct,
-          0.03,
-          0.96,
-          'WARNING',
-          'Atmospheric monitoring tower at Watch Tower initiates cross-mesh LoRa corroboration with Superior Hub.'
-        );
-
-        this.dispatchLoRaPacket('NODE-4', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-          event: 'INDUSTRIAL_PLUME_BURST',
-          sps30_pm25: 192.0,
-          gas_aqi: 310.0
-        });
-      }
-
-      // Superior Node at Watch Tower detects elevated air pollution with its SPS30 particle sensor & MQ135 sensor
+      // Superior Node at Watch Tower detects elevated air pollution
       const nodeSuperior = this.prototypeNodes.find(n => n.id === 'NODE-SUPERIOR');
       if (nodeSuperior) {
         nodeSuperior.sensors.forEach(s => {
@@ -1366,82 +1562,8 @@ export class SimulationEngine {
           siren_state: 'ACTIVE'
         });
       }
-
-      // Node-1 corridor station corroborates atmospheric drift
-      const node1 = this.prototypeNodes.find(n => n.id === 'NODE-1');
-      if (node1) {
-        node1.sensors.forEach(s => {
-          if (s.type === 'TEMP_BME688') {
-            s.value = 29.0;
-          }
-        });
-        node1.isCorroborating = true;
-      }
-    } else if (this.activeHazard.type === 'LANDSLIDE') {
-      const node3 = this.prototypeNodes.find(n => n.id === 'NODE-3');
-      if (node3) {
-        node3.sensors.forEach(s => {
-          if (s.type === 'VIBRATION_GEOPHONE') {
-            s.value = 1.48; // Critical ground shock & sliding tremor
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'HUMIDITY_DHT') {
-            s.value = 94.0; // Critical soil pore-water saturation
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'RAINFALL_OPTICAL') {
-            s.value = 52.0; // Heavy antecedent mountain downpour
-            s.isAnomaly = true;
-          }
-        });
-        node3.state = 'WARNING';
-        node3.localHazardConfidence = 0.92;
-        node3.isReSensing = true;
-        node3.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst for ground motion
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'LANDSLIDE SOIL SHEAR: Node 03 Geophone (1.48 g) & Soil Saturation (94%) detected slope failure',
-          'NODE-3',
-          node3.overallSensorTrustPct,
-          0.04,
-          0.92,
-          'WARNING',
-          'High-frequency seismic tremor detected at bedrock boulders accompanied by complete soil saturation. Adaptive 5 Hz burst sampling confirms ongoing rockfall.'
-        );
-
-        this.dispatchLoRaPacket('NODE-3', 'LOCAL_COMPUTER', 'EVENT_ALERT', {
-          event: 'LANDSLIDE_SOIL_FAILURE',
-          seismic_g: 1.48,
-          soil_saturation_pct: 94.0
-        });
-
-        this.dispatchLoRaPacket('NODE-3', 'NODE-2', 'VERIFY_REQUEST', {
-          event: 'LANDSLIDE_PRELIM',
-          seismic_g: 1.48
-        });
-        this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-          event: 'LANDSLIDE_SOIL_FAILURE',
-          seismic_g: 1.48,
-          soil_saturation_pct: 94.0
-        });
-      }
-
-      // Node 2 seismic geophone corroborates slope slip
-      const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
-      if (node2) {
-        node2.sensors.forEach(s => {
-          if (s.type === 'VIBRATION_GEOPHONE') {
-            s.value = 0.78;
-            s.isAnomaly = true;
-          }
-        });
-        node2.isCorroborating = true;
-      }
     } else if (this.activeHazard.type === 'EXTREME_HEAT') {
-      const node1 = this.prototypeNodes.find(n => n.id === 'NODE-1');
+      const node1 = this.getNode('NODE-1');
       if (node1) {
         node1.sensors.forEach(s => {
           if (s.type === 'TEMP_BME688') {
@@ -1461,31 +1583,20 @@ export class SimulationEngine {
 
         this.addLedgerEntry(
           'ANOMALY',
-          'EXTREME HEAT DOME BREACH: Node 01 BME688 (47.2°C) & Humidity (13%) detected severe heat inversion',
+          'EXTREME HEAT DOME BREACH: BME688 (47.2°C) & Humidity (13%) detected severe heat inversion',
           'NODE-1',
           node1.overallSensorTrustPct,
           0.04,
           0.89,
           'WARNING',
-          'Valley basin trapped air mass exceeding physiological safety thresholds. Adaptive 5 Hz burst sampling confirms sustained thermal spike.'
+          'Valley basin trapped air mass exceeding physiological safety thresholds.'
         );
 
-        this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', {
+        this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
           event: 'HEAT_STRESS_ANOMALY',
           temp_c: 47.2,
           humidity_pct: 13.0
         });
-      }
-
-      const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
-      if (node2) {
-        node2.sensors.forEach(s => {
-          if (s.type === 'TEMP_BME688') {
-            s.value = 44.8;
-            s.isAnomaly = true;
-          }
-        });
-        node2.isCorroborating = true;
       }
     }
 
@@ -1591,22 +1702,15 @@ export class SimulationEngine {
     this.packetSeqCounter++;
     const pktId = `PKT-${this.packetSeqCounter}`;
 
-    const srcNode = this.prototypeNodes.find(n => n.id === source);
+    const srcNode = this.getNode(source);
+    const dstNode = this.getNode(dest);
     let startPos: [number, number, number] = [0, 2, 0];
     let endPos: [number, number, number] = [0, 2, 0];
 
-    if (source === 'NODE-1') startPos = [10.6, -0.63, 17.9];
-    else if (source === 'NODE-2') startPos = [-16, 1.2, -12];
-    else if (source === 'NODE-3') startPos = [-35.7, 16.84, 41.7];
-    else if (source === 'NODE-4') startPos = [42.5, 16.5, 0.7];
-    else if (source === 'NODE-SUPERIOR') startPos = [42.5, 14.5, 2.5];
+    if (srcNode) startPos = [...srcNode.position];
     else if (source === 'LOCAL_COMPUTER') startPos = [0, 2.4, 0];
 
-    if (dest === 'NODE-1') endPos = [10.6, -0.63, 17.9];
-    else if (dest === 'NODE-2') endPos = [-16, 1.2, -12];
-    else if (dest === 'NODE-3') endPos = [-35.7, 16.84, 41.7];
-    else if (dest === 'NODE-4') endPos = [42.5, 16.5, 0.7];
-    else if (dest === 'NODE-SUPERIOR') endPos = [42.5, 14.5, 2.5];
+    if (dstNode) endPos = [...dstNode.position];
     else if (dest === 'LOCAL_COMPUTER') endPos = [0, 2.4, 0];
 
     const pkt: LoRaPacket = {

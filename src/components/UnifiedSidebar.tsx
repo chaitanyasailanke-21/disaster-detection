@@ -275,82 +275,118 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           </button>
         </div>
 
-        {/* Node Focus Selectors */}
-        <div className="grid grid-cols-5 gap-1 text-[10px]">
-          <button
-            onClick={() => {
-              onSelectNode('NODE-1');
-              handleCameraChange('NODE_INSPECTION');
-            }}
-            className={`py-1.5 px-0.5 rounded border text-center transition-colors cursor-pointer ${
-              selectedNodeId === 'NODE-1' && currentCamera === 'NODE_INSPECTION'
-                ? 'bg-sky-600 border-sky-400 text-white font-bold'
-                : 'bg-slate-800/70 border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Focus Node 01: River / Floodplain West Bank Station"
-          >
-            Node 1
-          </button>
+        {/* Node Focus Selectors: Flood 1 & 2, Fire 1 & 2, Landslide 1 & 2, Superior */}
+        <div className="flex flex-col gap-1 text-[10px]">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => {
+                onSelectNode('NODE-FLOOD-1');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-FLOOD-1' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-sky-600 border-sky-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-sky-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Flood Node 1 (X: 17.6, Z: -53.3, Upstream Mountain Gorge)"
+            >
+              🌊 Flood Node 1
+            </button>
 
-          <button
-            onClick={() => {
-              onSelectNode('NODE-2');
-              handleCameraChange('NODE_INSPECTION');
-            }}
-            className={`py-1.5 px-0.5 rounded border text-center transition-colors cursor-pointer ${
-              selectedNodeId === 'NODE-2' && currentCamera === 'NODE_INSPECTION'
-                ? 'bg-purple-600 border-purple-400 text-white font-bold'
-                : 'bg-slate-800/70 border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Focus Node 02: Forest Boundary Station"
-          >
-            Node 2
-          </button>
+            <button
+              onClick={() => {
+                onSelectNode('NODE-1');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-1' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-sky-600 border-sky-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-sky-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Flood Node 2 (X: 42.5, Z: 2.5, Valley Embankment)"
+            >
+              🌊 Flood Node 2
+            </button>
+          </div>
 
-          <button
-            onClick={() => {
-              onSelectNode('NODE-3');
-              handleCameraChange('NODE_INSPECTION');
-            }}
-            className={`py-1.5 px-0.5 rounded border text-center transition-colors cursor-pointer ${
-              selectedNodeId === 'NODE-3' && currentCamera === 'NODE_INSPECTION'
-                ? 'bg-amber-600 border-amber-400 text-white font-bold'
-                : 'bg-slate-800/70 border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Focus Node 03: Escarpment & Slope Boulder Station"
-          >
-            Node 3
-          </button>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => {
+                onSelectNode('NODE-2');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-2' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-orange-600 border-orange-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-orange-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Forest Fire Node 1 (X: -16.0, Z: -12.0, Forest Boundary)"
+            >
+              🔥 Fire Node 1
+            </button>
 
-          <button
-            onClick={() => {
-              onSelectNode('NODE-4');
-              handleCameraChange('NODE_INSPECTION');
-            }}
-            className={`py-1.5 px-0.5 rounded border text-center transition-colors cursor-pointer ${
-              selectedNodeId === 'NODE-4' && currentCamera === 'NODE_INSPECTION'
-                ? 'bg-emerald-600 border-emerald-400 text-white font-bold shadow-sm'
-                : 'bg-slate-800/70 border-slate-700/50 text-emerald-300 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Focus Node 04: Tall 20m Watch Tower Atmospheric Mast"
-          >
-            Node 4
-          </button>
+            <button
+              onClick={() => {
+                onSelectNode('NODE-FIRE-2');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-FIRE-2' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-orange-600 border-orange-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-orange-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Forest Fire Node 2 (X: -41.6, Z: -38.8, Deep Timber)"
+            >
+              🔥 Fire Node 2
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => {
+                onSelectNode('NODE-3');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-3' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-amber-600 border-amber-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-amber-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Landslide Node 1 (X: -35.7, Z: 41.7, Escarpment)"
+            >
+              ⛰️ Landslide Node 1
+            </button>
+
+            <button
+              onClick={() => {
+                onSelectNode('NODE-LANDSLIDE-2');
+                handleCameraChange('NODE_INSPECTION');
+              }}
+              className={`py-1 px-1 rounded border text-center transition-colors cursor-pointer ${
+                selectedNodeId === 'NODE-LANDSLIDE-2' && currentCamera === 'NODE_INSPECTION'
+                  ? 'bg-amber-600 border-amber-400 text-white font-bold'
+                  : 'bg-slate-800/70 border-slate-700/50 text-amber-300 hover:text-white hover:bg-slate-700'
+              }`}
+              title="Focus Landslide Node 2 (X: -9.0, Z: 34.7, Lower Slope Runout)"
+            >
+              ⛰️ Landslide Node 2
+            </button>
+          </div>
 
           <button
             onClick={() => {
               onSelectNode('NODE-SUPERIOR');
               handleCameraChange('WATCHTOWER_FOCUS');
             }}
-            className={`py-1.5 px-0.5 rounded border text-center transition-colors flex items-center justify-center gap-0.5 cursor-pointer ${
+            className={`py-1 px-2 rounded border text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
               (selectedNodeId === 'NODE-SUPERIOR' && currentCamera === 'WATCHTOWER_FOCUS') || currentCamera === 'WATCHTOWER_FOCUS'
                 ? 'bg-rose-600 border-rose-400 text-white font-bold shadow-sm'
                 : 'bg-slate-800/70 border-slate-700/50 text-rose-300 hover:text-white hover:bg-slate-700'
             }`}
             title="Focus Watch Tower 01 (ESP32 Superior Node & Siren Array)"
           >
-            <BellRing className="w-2.5 h-2.5 text-rose-400 shrink-0" />
-            <span className="truncate">Tower</span>
+            <BellRing className="w-3 h-3 text-rose-400 shrink-0" />
+            <span className="font-semibold">Watch Tower 01 · Superior Node</span>
           </button>
         </div>
 
