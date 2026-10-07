@@ -172,6 +172,16 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const packetMeshesRef = useRef<Map<string, THREE.Group>>(new Map());
   const nodeMarkersRef = useRef<Map<string, THREE.Group>>(new Map());
 
+  // ── Performance: pre-allocated scratch objects (avoid per-frame heap allocs) ──
+  const _scratchColorA  = useRef(new THREE.Color());
+  const _scratchColorB  = useRef(new THREE.Color());
+  const _scratchVec3A   = useRef(new THREE.Vector3());
+  const _scratchVec3B   = useRef(new THREE.Vector3());
+  const _scratchVec3C   = useRef(new THREE.Vector3());
+  const _scratchVec3D   = useRef(new THREE.Vector3());
+  // Frame counter for throttling expensive per-frame loops
+  const _frameCountRef  = useRef(0);
+
   // Risk heatmap and dense grid comparison groups
   const riskHeatmapGroupRef = useRef<THREE.Group | null>(null);
   const denseGridGroupRef = useRef<THREE.Group | null>(null);
@@ -458,8 +468,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     const renderer = new THREE.WebGLRenderer({ antialias: qc.antialias, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.setPixelRatio(qc.pixelRatio);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap; // High-performance filtered shadow map
+    renderer.shadowMap.enabled = qc.shadowMapSize > 0;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;  // softer + cheaper than PCFShadowMap
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
     container.appendChild(renderer.domElement);
@@ -614,8 +624,18 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       keysDownRef.current[e.code] = true;
 
       // R key: Reset camera to FREE_CAMERA
-      if (e.code === 'KeyR') {
+      if (e.code === 'KeyR' && !e.shiftKey) {
         switchCameraMode('FREE_CAMERA');
+      }
+
+      // Shift+R: Rotate camera left/right (nudge)
+      if (e.code === 'KeyR' && e.shiftKey) {
+        simulationEngine.nudgeCamera('ROTATE_LEFT');
+      }
+
+      // Shift+M: Move/pan camera left/right (nudge)
+      if (e.code === 'KeyM' && e.shiftKey) {
+        simulationEngine.nudgeCamera('PAN_LEFT');
       }
 
       if (e.code === 'KeyG') {
@@ -830,9 +850,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
         // A. MOVE / PAN (translates camera position and target together across terrain)
         const panSpeed = 0.042;
-        const forward = new THREE.Vector3().subVectors(ctrl.target, cam.position).setY(0).normalize();
-        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
-        const panDelta = new THREE.Vector3()
+        const forward = _scratchVec3A.current.subVectors(ctrl.target, cam.position).setY(0).normalize();
+        const right = _scratchVec3B.current.crossVectors(forward, _scratchVec3C.current.set(0, 1, 0)).normalize();
+        const panDelta = _scratchVec3D.current.set(0, 0, 0)
           .addScaledVector(right, -dx * panSpeed)
           .addScaledVector(forward, dy * panSpeed);
 
@@ -841,8 +861,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
         // B. ROTATE / ORBIT (orbits camera 360 degrees around the newly moved target)
         const rotSpeed = 0.0055;
-        const offset = new THREE.Vector3().subVectors(cam.position, ctrl.target);
-        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -dx * rotSpeed);
+        const offset = _scratchVec3A.current.subVectors(cam.position, ctrl.target);
+        offset.applyAxisAngle(_scratchVec3C.current.set(0, 1, 0), -dx * rotSpeed);
         offset.applyAxisAngle(right, -dy * rotSpeed);
 
         if (ctrl.target.y + offset.y < 0.6) {
@@ -1040,14 +1060,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         simulationEngine.cameraMode = 'FREE_CAMERA';
         const moveSpeed = (keys['ShiftLeft'] || keys['ShiftRight'] ? 36.0 : 16.0) * dt;
 
-        const forward = new THREE.Vector3().subVectors(controls.target, camera.position).setY(0).normalize();
-        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        const forward = _scratchVec3A.current.subVectors(controls.target, camera.position).setY(0).normalize();
+        const right = _scratchVec3B.current.crossVectors(forward, _scratchVec3C.current.set(0, 1, 0)).normalize();
 
-        const moveDelta = new THREE.Vector3();
-        if (keys['KeyW']) moveDelta.add(forward.clone().multiplyScalar(moveSpeed));
-        if (keys['KeyS']) moveDelta.add(forward.clone().multiplyScalar(-moveSpeed));
-        if (keys['KeyD']) moveDelta.add(right.clone().multiplyScalar(moveSpeed));
-        if (keys['KeyA']) moveDelta.add(right.clone().multiplyScalar(-moveSpeed));
+        const moveDelta = _scratchVec3D.current.set(0, 0, 0);
+        if (keys['KeyW']) moveDelta.addScaledVector(forward,  moveSpeed);
+        if (keys['KeyS']) moveDelta.addScaledVector(forward, -moveSpeed);
+        if (keys['KeyD']) moveDelta.addScaledVector(right,    moveSpeed);
+        if (keys['KeyA']) moveDelta.addScaledVector(right,   -moveSpeed);
         if (keys['KeyE']) moveDelta.y += moveSpeed;
         if (keys['KeyQ']) moveDelta.y -= moveSpeed;
 
@@ -1091,16 +1111,16 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
       if (type === 'ROTATE_LEFT' || type === 'ROTATE_RIGHT') {
         const angle = (type === 'ROTATE_LEFT' ? 1 : -1) * (Math.PI / 8);
-        const offset = new THREE.Vector3().subVectors(cam.position, ctrl.target);
-        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        const offset = _scratchVec3A.current.subVectors(cam.position, ctrl.target);
+        offset.applyAxisAngle(_scratchVec3B.current.set(0, 1, 0), angle);
         cam.position.copy(ctrl.target).add(offset);
         ctrl.update();
         targetCamPosRef.current.copy(cam.position);
         targetLookAtRef.current.copy(ctrl.target);
       } else if (type === 'PAN_LEFT' || type === 'PAN_RIGHT') {
         const dir = (type === 'PAN_LEFT' ? -1 : 1) * 6.0;
-        const forward = new THREE.Vector3().subVectors(ctrl.target, cam.position).setY(0).normalize();
-        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        const forward = _scratchVec3A.current.subVectors(ctrl.target, cam.position).setY(0).normalize();
+        const right = _scratchVec3B.current.crossVectors(forward, _scratchVec3C.current.set(0, 1, 0)).normalize();
         const delta = right.multiplyScalar(dir);
         cam.position.add(delta);
         ctrl.target.add(delta);
@@ -3124,7 +3144,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     factoryGroup.add(stack3);
 
     // 6. CONTINUOUS EXHALING SMOKE PARTICLE SYSTEM
-    const smokeCount = 450;
+    const smokeCount = qualityManager.particles(450);
     const smokeGeo = new THREE.BufferGeometry();
     const smokePos = new Float32Array(smokeCount * 3);
 
@@ -5558,8 +5578,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
     const softDisasterSmokeTexture = new THREE.CanvasTexture(smokeCanvas);
 
-    // 1. Focused Tree-Anchored Fire Particle System (380 particles licking up the burning trees)
-    const fireCount = 960;
+    // 1. Focused Tree-Anchored Fire Particle System
+    const fireCount = qualityManager.particles(960);
     const fireGeo = new THREE.BufferGeometry();
     const firePos = new Float32Array(fireCount * 3);
     for (let i = 0; i < fireCount; i++) {
@@ -5584,8 +5604,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     scene.add(firePoints);
     fireParticlesRef.current = firePoints;
 
-    // 2. Rising Golden Embers from Burning Trees (particles drifting into the air)
-    const emberCount = 580;
+    // 2. Rising Golden Embers from Burning Trees
+    const emberCount = qualityManager.particles(580);
     const emberGeo = new THREE.BufferGeometry();
     const emberPos = new Float32Array(emberCount * 3);
     for (let i = 0; i < emberCount; i++) {
@@ -5610,7 +5630,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     emberParticlesRef.current = emberPoints;
 
     // 3. Realistic Billowing Smoke Plumes from Burning Tree Tops
-    const smokeCount = 680;
+    const smokeCount = qualityManager.particles(680);
     const smokeGeo = new THREE.BufferGeometry();
     const smokePos = new Float32Array(smokeCount * 3);
     for (let i = 0; i < smokeCount; i++) {
@@ -5634,8 +5654,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     scene.add(smokePoints);
     smokeParticlesRef.current = smokePoints;
 
-    // 4. Rain Particles — larger, denser, more visible streaks
-    const rainCount = 2800;
+    // 4. Rain Particles
+    const rainCount = qualityManager.particles(2800);
     const rainGeo = new THREE.BufferGeometry();
     const rainPos = new Float32Array(rainCount * 3);
     for (let i = 0; i < rainCount * 3; i += 3) {
@@ -5671,8 +5691,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     scene.add(rainPoints);
     rainParticlesRef.current = rainPoints;
 
-    // 5. Air Pollution & Toxic Smoke Plume System (drifting directly into Node 2 sensor station)
-    const pollutionCount = 650;
+    // 5. Air Pollution & Toxic Smoke Plume System
+    const pollutionCount = qualityManager.particles(650);
     const pollutionGeo = new THREE.BufferGeometry();
     const pollutionPos = new Float32Array(pollutionCount * 3);
     for (let i = 0; i < pollutionCount * 3; i += 3) {
@@ -5694,7 +5714,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     pollutionSmokeRef.current = pollutionPoints;
 
     // 7. Landslide Dust & Sliding Earth Particle Cloud
-    const slideDustCount = 320;
+    const slideDustCount = qualityManager.particles(320);
     const slideDustGeo = new THREE.BufferGeometry();
     const slideDustPos = new Float32Array(slideDustCount * 3);
     for (let i = 0; i < slideDustCount * 3; i += 3) {
@@ -5738,6 +5758,12 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   function updateSceneDynamicLayers(scene: THREE.Scene, time: number) {
     const hazard = simulationEngine.activeHazard;
     const weather = simulationEngine.weatherMode;
+
+    // ── Frame counter for throttling expensive particle/terrain loops ──────
+    _frameCountRef.current = (_frameCountRef.current + 1) % 120;
+    const fc = _frameCountRef.current;
+    const evenFrame = (fc % 2 === 0);   // particles: every 2nd frame
+    const thirdFrame = (fc % 3 === 0);  // terrain color: every 3rd frame
 
     // 1. DYNAMIC DAYLIGHT / OVERCAST LIGHTING SUITE (NO DARK MODE / NO BLACK SCENE!)
     if (sunLightRef.current && ambientLightRef.current && sceneRef.current) {
@@ -5864,9 +5890,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const fog = sceneRef.current.fog as THREE.FogExp2;
       if (fog) {
         fog.density = THREE.MathUtils.lerp(fog.density, targetFogDensity, 0.05);
-        fog.color.lerp(new THREE.Color(targetFogColor), 0.05);
+        fog.color.lerp(_scratchColorA.current.setHex(targetFogColor), 0.05);
       }
-      (sceneRef.current.background as THREE.Color).lerp(new THREE.Color(targetSkyColor), 0.05);
+      (sceneRef.current.background as THREE.Color).lerp(_scratchColorB.current.setHex(targetSkyColor), 0.05);
 
       // Dynamic terrain wetness & reflections
       if (terrainMaterialRef.current) {
@@ -6283,12 +6309,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           sl.intensity = 6 + Math.sin(time * 12 + idx * 2.5) * 2;
         });
 
+        // Throttle: particle position updates every 2nd frame — visually identical, half the CPU
+        if (evenFrame) {
         // Fire particles licking directly up the trunks and crowns of the burning trees
         const pos = fireParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
         for (let i = 0; i < pos.count; i++) {
           const bt = BURNING_TREES[i % BURNING_TREES.length];
           const gy = getMountainTerrainElevation(bt.x, bt.z);
-          pos.array[i * 3 + 1] += 0.055; // rise up the tree trunk & crown
+          pos.array[i * 3 + 1] += 0.055 * 2; // doubled step compensates for skipped frame
           pos.array[i * 3] += Math.sin(time * 3.0 + i) * 0.012;
           pos.array[i * 3 + 2] += Math.cos(time * 2.8 + i) * 0.012;
 
@@ -6305,7 +6333,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         for (let i = 0; i < ePos.count; i++) {
           const bt = BURNING_TREES[i % BURNING_TREES.length];
           const gy = getMountainTerrainElevation(bt.x, bt.z);
-          ePos.array[i * 3 + 1] += 0.075;
+          ePos.array[i * 3 + 1] += 0.075 * 2;
           ePos.array[i * 3] += Math.sin(time * 2.5 + i) * 0.02 + 0.01;
           ePos.array[i * 3 + 2] += Math.cos(time * 2.2 + i) * 0.018;
 
@@ -6322,7 +6350,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         for (let i = 0; i < sPos.count; i++) {
           const bt = BURNING_TREES[i % BURNING_TREES.length];
           const gy = getMountainTerrainElevation(bt.x, bt.z);
-          sPos.array[i * 3 + 1] += 0.048;
+          sPos.array[i * 3 + 1] += 0.048 * 2;
           sPos.array[i * 3] += 0.018 + Math.sin(time * 1.2 + i) * 0.008; // gentle breeze drift
           sPos.array[i * 3 + 2] += Math.cos(time * 1.0 + i) * 0.008;
 
@@ -6333,6 +6361,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           }
         }
         sPos.needsUpdate = true;
+        } // end evenFrame
       } else {
         fireLightRef.current.intensity = THREE.MathUtils.lerp(fireLightRef.current.intensity, 0, 0.08);
         secondaryFireLightsRef.current.forEach(sl => {
@@ -6347,21 +6376,19 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       rainParticlesRef.current.visible = isRaining;
       const rainMat = rainParticlesRef.current.material as THREE.PointsMaterial;
 
-      // Scale opacity and size by storm intensity — clearly visible at all levels
       const targetRainOpacity = weather === 'STORM' ? 0.95
                                : weather === 'HEAVY_RAIN' ? 0.88
                                : isRaining ? 0.72 : 0;
       const targetSize = weather === 'STORM' ? 0.68
                        : weather === 'HEAVY_RAIN' ? 0.58
                        : isRaining ? 0.48 : 0.55;
-      // Fast fade-in (0.18 lerp factor = ~8 frames to 75% opacity)
       rainMat.opacity = THREE.MathUtils.lerp(rainMat.opacity, targetRainOpacity, 0.18);
       rainMat.size    = THREE.MathUtils.lerp(rainMat.size, targetSize, 0.12);
 
-      if (isRaining) {
+      // Throttle: update rain positions every 2nd frame — imperceptible at 60fps
+      if (isRaining && evenFrame) {
         const rPos = rainParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
-        // Faster fall + diagonal wind angle for realism
-        const fallSpeed = weather === 'STORM' ? 2.2 : weather === 'HEAVY_RAIN' ? 1.8 : 1.2;
+        const fallSpeed = weather === 'STORM' ? 2.2 * 2 : weather === 'HEAVY_RAIN' ? 1.8 * 2 : 1.2 * 2;
         const windX     = weather === 'STORM' ? -0.22 : -0.10;
         const windZ     = weather === 'STORM' ?  0.08 :  0.04;
         for (let i = 0; i < rPos.count * 3; i += 3) {
@@ -6557,7 +6584,8 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const tPos = tGeo.attributes.position;
       const baseY = baseTerrainYRef.current;
 
-      if (sProgress > 0.001) {
+      // Throttle terrain deformation: run every 3rd frame — 9217 vertex loop is expensive
+      if (sProgress > 0.001 && thirdFrame) {
         for (let i = 0; i < tPos.count; i++) {
           const x = tPos.getX(i);
           const z = tPos.getZ(i);
@@ -6570,7 +6598,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           }
         }
         tPos.needsUpdate = true;
-      } else if (tPos.getY(0) !== baseY[0]) {
+      } else if (sProgress <= 0.001 && tPos.getY(0) !== baseY[0]) {
         for (let i = 0; i < tPos.count; i++) {
           tPos.setY(i, baseY[i]);
         }
@@ -6613,7 +6641,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       const tColors = tGeo.attributes.color as THREE.BufferAttribute;
       const baseCol = baseTerrainColorsRef.current;
 
-      if (sProgress > 0.005) {
+      if (sProgress > 0.005 && thirdFrame) {
         for (let i = 0; i < tPos.count; i++) {
           const x = tPos.getX(i);
           const z = tPos.getZ(i);
@@ -6893,77 +6921,111 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
 
     // 7. ANIMATE IN-FLIGHT LORA PACKETS
+    // Tubes are built ONCE on packet creation (no per-frame geometry allocs).
+    // A bright sphere travels along the arc as the visible "head".
     const activePackets: LoRaPacket[] = simulationEngine.activePackets;
     const currentPktIds = new Set(activePackets.map((p: LoRaPacket) => p.id));
 
     packetMeshesRef.current.forEach((mesh, id) => {
       if (!currentPktIds.has(id)) {
         scene.remove(mesh);
+        // Dispose geometry/material to free GPU memory
+        mesh.traverse(child => {
+          if ((child as THREE.Mesh).isMesh) {
+            (child as THREE.Mesh).geometry?.dispose();
+            const mat = (child as THREE.Mesh).material;
+            if (Array.isArray(mat)) mat.forEach(m => m.dispose());
+            else (mat as THREE.Material)?.dispose();
+          }
+        });
         packetMeshesRef.current.delete(id);
       }
     });
 
     activePackets.forEach((p: LoRaPacket) => {
+      const sx = p.startPos?.[0] ?? 0, sy = p.startPos?.[1] ?? 0, sz = p.startPos?.[2] ?? 0;
+      const ex = p.endPos?.[0]   ?? 0, ey = p.endPos?.[1]   ?? 0, ez = p.endPos?.[2]   ?? 0;
+      const t  = Math.min(1.0, Math.max(0.0, p.progress || 0));
+
       let pGroup = packetMeshesRef.current.get(p.id);
       if (!pGroup) {
+        // ── Build once ───────────────────────────────────────────────────
         pGroup = new THREE.Group();
-        pGroup.userData = { packet: p };
 
-        // Dark, rich colors — deep indigo for request, dark teal for response, deep violet for alert
-        const pktColor = p.messageType === 'VERIFY_REQUEST'  ? 0x3730a3   // indigo-800
-                       : p.messageType === 'VERIFY_RESPONSE' ? 0x0f766e   // teal-700
-                       : 0x5b21b6;                                         // violet-800 EVENT_ALERT
+        const dist      = Math.sqrt((ex - sx) ** 2 + (ez - sz) ** 2);
+        const arcHeight = Math.max(8.0, dist * 0.22);
+        const isAlert   = p.messageType === 'EVENT_ALERT';
+        const coreColor = isAlert ? 0x00ffff : 0xffffff;
+        const haloColor = isAlert ? 0x00e5ff : 0xffcc00;
 
-        // Glow halo color — slightly lighter than core for contrast
-        const glowColor = p.messageType === 'VERIFY_REQUEST'  ? 0x6366f1   // indigo-500
-                        : p.messageType === 'VERIFY_RESPONSE' ? 0x14b8a6   // teal-500
-                        : 0x8b5cf6;                                         // violet-500
+        // Direction & lateral spread axis
+        const dx = ex - sx, dz = ez - sz;
+        const dlen = Math.sqrt(dx * dx + dz * dz) || 1;
+        const px = -dz / dlen, pz = dx / dlen; // perp in XZ plane
 
-        // Core sphere
-        const sphereMat = new THREE.MeshBasicMaterial({ color: pktColor });
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.65, 12, 12), sphereMat);
-        pGroup.add(sphere);
+        const CURVE_PTS  = 16; // reduced from 24 — still smooth
+        const RAY_COUNT  = 5;
+        const spreadMax  = dist * 0.10;
 
-        // Outer glow ring
-        const glowMat = new THREE.MeshBasicMaterial({
-          color: glowColor,
-          transparent: true,
-          opacity: 0.50,
-          side: THREE.DoubleSide
-        });
-        const glowRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.6, 20), glowMat);
-        pGroup.add(glowRing);
+        for (let r = 0; r < RAY_COUNT; r++) {
+          const sf = RAY_COUNT > 1
+            ? (r - (RAY_COUNT - 1) / 2) / ((RAY_COUNT - 1) / 2)
+            : 0;
 
-        // Inner accent ring
-        const innerMat = new THREE.MeshBasicMaterial({
-          color: glowColor,
-          transparent: true,
-          opacity: 0.30,
-          side: THREE.DoubleSide
-        });
-        const innerRing = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.55, 16), innerMat);
-        pGroup.add(innerRing);
+          const pts: THREE.Vector3[] = [];
+          for (let i = 0; i <= CURVE_PTS; i++) {
+            const s   = i / CURVE_PTS;
+            const bx  = sx + (ex - sx) * s;
+            const bz  = sz + (ez - sz) * s;
+            const by  = sy + (ey - sy) * s + 1.5 + Math.sin(s * Math.PI) * arcHeight;
+            const lat = Math.sin(s * Math.PI) * sf * spreadMax;
+            pts.push(new THREE.Vector3(bx + px * lat, by, bz + pz * lat));
+          }
+
+          const isCenter   = r === Math.floor(RAY_COUNT / 2);
+          const tubeRadius = isCenter ? 0.35 : 0.18;
+
+          // Use fewer tube segments for performance (8 path segs, 5 radial)
+          const curve  = new THREE.CatmullRomCurve3(pts);
+          const geo    = new THREE.TubeGeometry(curve, 8, tubeRadius, 5, false);
+          const mat    = new THREE.MeshBasicMaterial({
+            color:       isCenter ? coreColor : haloColor,
+            transparent: true,
+            opacity:     isCenter ? 1.0 : (0.72 - Math.abs(sf) * 0.15),
+          });
+          pGroup.add(new THREE.Mesh(geo, mat));
+        }
+
+        // Traveling sphere head — shows progress along arc
+        const headMat  = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), headMat);
+        headMesh.name  = '__head__';
+        pGroup.add(headMesh);
+
+        pGroup.userData = { sx, sy, sz, ex, ey, ez,
+          arcHeight,
+          px, pz, // lateral perp components (no spread on head)
+        };
 
         scene.add(pGroup);
         packetMeshesRef.current.set(p.id, pGroup);
       }
 
-      const start = p.startPos ? new THREE.Vector3(p.startPos[0], p.startPos[1], p.startPos[2]) : new THREE.Vector3(0, 0, 0);
-      const end   = p.endPos   ? new THREE.Vector3(p.endPos[0],   p.endPos[1],   p.endPos[2])   : new THREE.Vector3(LOCAL_COMPUTER_POSITION[0], LOCAL_COMPUTER_POSITION[1], LOCAL_COMPUTER_POSITION[2]);
-      const t = Math.min(1.0, Math.max(0.0, p.progress || 0));
-
-      const x = THREE.MathUtils.lerp(start.x, end.x, t);
-      const z = THREE.MathUtils.lerp(start.z, end.z, t);
-      const dist = Math.sqrt((end.x - start.x) ** 2 + (end.z - start.z) ** 2);
-      const arcHeight = Math.max(6.0, dist * 0.18);
-      const y = Math.sin(t * Math.PI) * arcHeight + THREE.MathUtils.lerp(start.y + 2.0, end.y + 2.0, t);
-
-      pGroup.position.set(x, y, z);
-      pGroup.rotation.y = time * 3;
-      const glowRingChild  = pGroup.children[1] as THREE.Mesh;
-      const innerRingChild = pGroup.children[2] as THREE.Mesh;
-      if (glowRingChild)  glowRingChild.rotation.x  = time * 2;
-      if (innerRingChild) innerRingChild.rotation.z  = time * 4;
+      // ── Every frame: only move the sphere head (zero allocs) ─────────
+      const head = pGroup.getObjectByName('__head__') as THREE.Mesh | undefined;
+      if (head) {
+        const { sx: bsx, sy: bsy, sz: bsz, ex: bex, ey: bey, ez: bez, arcHeight: ah } = pGroup.userData as {
+          sx:number; sy:number; sz:number; ex:number; ey:number; ez:number; arcHeight:number; px:number; pz:number;
+        };
+        head.position.set(
+          bsx + (bex - bsx) * t,
+          bsy + (bey - bsy) * t + 1.5 + Math.sin(t * Math.PI) * ah,
+          bsz + (bez - bsz) * t
+        );
+        // Pulse the head slightly
+        const pulse = 0.9 + 0.2 * Math.sin(time * 12 + p.sequenceNumber);
+        head.scale.setScalar(pulse);
+      }
     });
 
     // 8. WATCH TOWER EMERGENCY SIREN & 3D TRAVELING SOUNDWAVE SHOCKWAVES

@@ -1226,7 +1226,7 @@ export class SimulationEngine {
     }
 
     if (this.activeHazard.type === 'FLOOD' || this.activeHazard.type === 'EXTREME_RAIN') {
-      // 1. Flood Node 1 (X: 17.6, Z: -53.3, upstream mountain river gorge) detects surge first
+      // Flood Node 1 (upstream, X:17.6, Z:-53.3) detects surge first
       const floodNode1 = this.getNode('NODE-FLOOD-1');
       const floodNode2 = this.getNode('NODE-1'); // Flood Node 2 at [7.2, -0.42, 32.2]
       if (floodNode1) {
@@ -1243,72 +1243,73 @@ export class SimulationEngine {
         floodNode1.state = 'WATCH';
         floodNode1.localHazardConfidence = 0.76;
         floodNode1.isReSensing = true;
-        floodNode1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst!
+        floodNode1.samplingRateHz = 5.0;
 
         this.addLedgerEntry(
-          'ANOMALY', 
-          'FLOOD DETECTED BY NODE 1: Flood Node 1 (X: 17.6, Z: -53.3) ultrasonic water level breached (4.85m > 3.90m)', 
-          floodNode1.id, 
-          floodNode1.overallSensorTrustPct, 
-          0.05, 
-          0.76, 
-          'WATCH', 
-          'Mountain runoff surge detected at upstream gorge. Clarifying event with Flood Node 2.'
+          'ANOMALY',
+          'FLOOD DETECTED BY NODE 1: Flood Node 1 (X: 17.6, Z: -53.3) ultrasonic water level breached (4.85m > 3.90m)',
+          floodNode1.id,
+          floodNode1.overallSensorTrustPct,
+          0.05,
+          0.76,
+          'WATCH',
+          'Mountain runoff surge detected at upstream gorge. Peer-verifying with Flood Node 2.'
         );
 
-        // Step 1: Flood Node 1 clarifies with Flood Node 2
+        // ── Step 1 (0 ms): Node 1 → Node 2 — VERIFY_REQUEST ─────────────
         this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', {
           event: 'FLOOD_PRELIM',
           water_m: 4.85,
           rain_mm_h: 68.0
         });
 
-        // Step 2: Flood Node 2 clarifies and corroborates
+        // ── Step 2 (700 ms): Node 2 activates sensors and corroborates ────
         setTimeout(() => {
-          if (floodNode2 && (this.activeHazard?.type === 'FLOOD' || this.activeHazard?.type === 'EXTREME_RAIN')) {
-            floodNode2.sensors.forEach(s => {
-              if (s.type === 'WATER_LEVEL_ULTRASONIC') {
-                s.value = 3.90;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'HUMIDITY_DHT') {
-                s.value = 95.0;
-                s.isAnomaly = true;
-              }
-            });
-            floodNode2.isCorroborating = true;
-            floodNode2.state = 'WARNING';
-            floodNode2.localHazardConfidence = 0.89;
+          const type = this.activeHazard?.type;
+          if (!floodNode2 || (type !== 'FLOOD' && type !== 'EXTREME_RAIN')) return;
 
-            this.addLedgerEntry(
-              'NEIGHBOUR_RESPONSE',
-              'FLOOD CORROBORATION: Flood Node 2 (X: 7.2, Z: 32.2) confirmed downstream embankment surge (3.90m)',
-              floodNode2.id,
-              floodNode2.overallSensorTrustPct,
-              0.76,
-              0.94,
-              'CRITICAL',
-              'Downstream river corridor surge confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
-            );
+          floodNode2.sensors.forEach(s => {
+            if (s.type === 'WATER_LEVEL_ULTRASONIC') { s.value = 3.90; s.isAnomaly = true; }
+            if (s.type === 'HUMIDITY_DHT')           { s.value = 95.0; s.isAnomaly = true; }
+          });
+          floodNode2.isCorroborating = true;
+          floodNode2.state = 'WARNING';
+          floodNode2.localHazardConfidence = 0.89;
 
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_SURGE',
-              water_m: 3.90
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FLOOD_VERIFIED',
-              water_m: 4.85,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FLOOD_CORROBORATION',
-              water_m: 3.90
-            });
-          }
+          this.addLedgerEntry(
+            'NEIGHBOUR_RESPONSE',
+            'FLOOD CORROBORATION: Flood Node 2 (X: 7.2, Z: 32.2) confirmed downstream embankment surge (3.90 m)',
+            floodNode2.id, floodNode2.overallSensorTrustPct, 0.76, 0.94, 'CRITICAL',
+            'Downstream surge confirmed. Forwarding to Watch Tower.'
+          );
         }, 700);
+
+        // ── Step 3 (1400 ms): Node 1 → Watch Tower — EVENT_ALERT ─────────
+        setTimeout(() => {
+          const type = this.activeHazard?.type;
+          if (type !== 'FLOOD' && type !== 'EXTREME_RAIN') return;
+
+          this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'FLOOD_VERIFIED', water_m: 4.85, corroborated: 1
+          });
+        }, 1400);
+
+        // ── Step 4 (2100 ms): Node 2 → Watch Tower — EVENT_ALERT ─────────
+        setTimeout(() => {
+          const type = this.activeHazard?.type;
+          if (type !== 'FLOOD' && type !== 'EXTREME_RAIN') return;
+
+          this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'FLOOD_CORROBORATION', water_m: 3.90
+          });
+
+          this.addLedgerEntry(
+            'NEIGHBOUR_RESPONSE',
+            'FLOOD VERIFIED: Both nodes reported to Watch Tower — siren arming.',
+            'NODE-SUPERIOR', 99, 0.94, 0.97, 'CRITICAL',
+            'Full chain complete. Evidence fusion will trigger siren.'
+          );
+        }, 2100);
       }
     } else if (this.activeHazard.type === 'FOREST_FIRE') {
       // 1. Forest Fire Node 1 (X: -16.0, Z: -12.0) detects smoke & heat first
@@ -1345,65 +1346,48 @@ export class SimulationEngine {
           'Smoke and thermal anomaly confirmed. Clarifying event with Forest Fire Node 2.'
         );
 
-        // Step 1: Forest Fire Node 1 clarifies with Forest Fire Node 2
+        // Step 1 (0 ms): Node 1 → Node 2 — VERIFY_REQUEST
         this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', {
           event: 'FIRE_PRELIM',
           smoke_ppm: 185.0,
           temp_c: 49.5
         });
 
-        // Step 2: Forest Fire Node 2 clarifies and corroborates
+        // Step 2 (700 ms): Node 2 activates sensors and corroborates
         setTimeout(() => {
           if (fireNode2 && this.activeHazard?.type === 'FOREST_FIRE') {
             fireNode2.sensors.forEach(s => {
-              if (s.type === 'FLAME_IR') {
-                s.value = 1.0;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'TEMP_BME688') {
-                s.value = 52.0;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'SMOKE_MQ2') {
-                s.value = 145.0;
-                s.isAnomaly = true;
-              }
+              if (s.type === 'FLAME_IR') { s.value = 1.0; s.isAnomaly = true; }
+              if (s.type === 'TEMP_BME688') { s.value = 52.0; s.isAnomaly = true; }
+              if (s.type === 'SMOKE_MQ2') { s.value = 145.0; s.isAnomaly = true; }
             });
             fireNode2.isCorroborating = true;
             fireNode2.state = 'WARNING';
             fireNode2.localHazardConfidence = 0.91;
-
             this.addLedgerEntry(
               'NEIGHBOUR_RESPONSE',
-              'FOREST FIRE CORROBORATION: Forest Fire Node 2 (X: -41.6, Z: -38.8) confirmed optical IR flame and 52.0°C combustion',
-              fireNode2.id,
-              fireNode2.overallSensorTrustPct,
-              0.74,
-              0.95,
-              'CRITICAL',
-              'Dual-node optical flame & smoke convergence. Transferring verified disaster packets to Superior Node at Watch Tower.'
+              'FOREST FIRE CORROBORATION: Forest Fire Node 2 confirmed optical IR flame and 52.0°C combustion',
+              fireNode2.id, fireNode2.overallSensorTrustPct, 0.74, 0.95, 'CRITICAL',
+              'Dual-node optical flame & smoke convergence. Forwarding to Watch Tower.'
             );
-
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_FLAME_ACTIVE',
-              flame_ir: 1.0,
-              temp_c: 52.0
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FIRE_VERIFIED',
-              smoke_ppm: 185.0,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FIRE_CORROBORATION',
-              flame_ir: 1.0,
-              temp_c: 52.0
-            });
           }
         }, 700);
+
+        // Step 3 (1400 ms): Node 1 → Watch Tower
+        setTimeout(() => {
+          if (this.activeHazard?.type !== 'FOREST_FIRE') return;
+          this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'FIRE_VERIFIED', smoke_ppm: 185.0, corroborated: 1
+          });
+        }, 1400);
+
+        // Step 4 (2100 ms): Node 2 → Watch Tower
+        setTimeout(() => {
+          if (this.activeHazard?.type !== 'FOREST_FIRE') return;
+          this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'FIRE_CORROBORATION', flame_ir: 1.0, temp_c: 52.0
+          });
+        }, 2100);
       }
     } else if (this.activeHazard.type === 'LANDSLIDE') {
       // 1. Landslide Node 1 (X: -35.7, Z: 41.7) detects slope shear & geophone tremor first
@@ -1449,54 +1433,40 @@ export class SimulationEngine {
           soil_sat: 94.0
         });
 
-        // Step 2: Landslide Node 2 clarifies and corroborates
+        // Step 2 (700 ms): Node 2 activates sensors and corroborates
         setTimeout(() => {
           if (lsNode2 && this.activeHazard?.type === 'LANDSLIDE') {
             lsNode2.sensors.forEach(s => {
-              if (s.type === 'VIBRATION_GEOPHONE') {
-                s.value = 0.95;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'IMU_MPU6050') {
-                s.value = 11.4;
-                s.isAnomaly = true;
-              }
+              if (s.type === 'VIBRATION_GEOPHONE') { s.value = 0.95; s.isAnomaly = true; }
+              if (s.type === 'IMU_MPU6050') { s.value = 11.4; s.isAnomaly = true; }
             });
             lsNode2.isCorroborating = true;
             lsNode2.state = 'WARNING';
             lsNode2.localHazardConfidence = 0.88;
-
             this.addLedgerEntry(
               'NEIGHBOUR_RESPONSE',
-              'LANDSLIDE CORROBORATION: Landslide Node 2 (X: -9.0, Z: 34.7) confirmed lower runout displacement (11.4° tilt, 0.95 g)',
-              lsNode2.id,
-              lsNode2.overallSensorTrustPct,
-              0.92,
-              0.95,
-              'CRITICAL',
-              'Dual-node slope slip confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
+              'LANDSLIDE CORROBORATION: Landslide Node 2 confirmed lower runout displacement (11.4° tilt, 0.95 g)',
+              lsNode2.id, lsNode2.overallSensorTrustPct, 0.92, 0.95, 'CRITICAL',
+              'Dual-node slope slip confirmed. Forwarding to Watch Tower.'
             );
-
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-3', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_RUNOUT_SLIP',
-              seismic_g: 0.95,
-              tilt_deg: 11.4
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'LANDSLIDE_VERIFIED',
-              seismic_g: 1.48,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'LANDSLIDE_CORROBORATION',
-              seismic_g: 0.95,
-              tilt_deg: 11.4
-            });
           }
         }, 700);
+
+        // Step 3 (1400 ms): Node 1 → Watch Tower
+        setTimeout(() => {
+          if (this.activeHazard?.type !== 'LANDSLIDE') return;
+          this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'LANDSLIDE_VERIFIED', seismic_g: 1.48, corroborated: 1
+          });
+        }, 1400);
+
+        // Step 4 (2100 ms): Node 2 → Watch Tower
+        setTimeout(() => {
+          if (this.activeHazard?.type !== 'LANDSLIDE') return;
+          this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            event: 'LANDSLIDE_CORROBORATION', seismic_g: 0.95, tilt_deg: 11.4
+          });
+        }, 2100);
       }
     } else if (this.activeHazard.type === 'AIR_QUALITY_EVENT') {
       const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
@@ -1671,14 +1641,7 @@ export class SimulationEngine {
       this.dispatchLoRaPacket('NODE-3', 'NODE-LANDSLIDE-2', 'VERIFY_REQUEST', {
         event: 'LANDSLIDE_PRELIM', seismic_g: 1.48, soil_sat: 94.0
       });
-      // 2000 ms: Node2 → Node1  (previous packet fully landed at ~1820ms)
-      setTimeout(() => {
-        if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
-        this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-3', 'VERIFY_RESPONSE', {
-          status: 'CORROBORATED_RUNOUT_SLIP', seismic_g: 0.95, tilt_deg: 11.4
-        });
-      }, 2000);
-      // 4000 ms: Both → Watch Tower
+      // 1400 ms: Both → Watch Tower
       setTimeout(() => {
         if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
         this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
@@ -1693,24 +1656,17 @@ export class SimulationEngine {
           'NODE-SUPERIOR', 99, 0.92, 0.93, 'WARNING',
           'Landslide chain complete. Forest Fire chain starting.'
         );
-      }, 4000);
+      }, 1400);
 
       // ── CHAIN 2: FOREST FIRE ────────────────────────────────────────────
-      // 6200 ms: Node1 → Node2  (landslide tower packets landed ~5820ms + 380ms gap)
+      // 2600 ms: Node1 → Node2
       setTimeout(() => {
         if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
         this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', {
           event: 'FIRE_PRELIM', smoke_ppm: 185.0, temp_c: 49.5
         });
-      }, 6200);
-      // 8200 ms: Node2 → Node1
-      setTimeout(() => {
-        if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
-        this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
-          status: 'CORROBORATED_FLAME_ACTIVE', flame_ir: 1.0, temp_c: 52.0
-        });
-      }, 8200);
-      // 10200 ms: Both → Watch Tower
+      }, 2600);
+      // 4000 ms: Both → Watch Tower
       setTimeout(() => {
         if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
         this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
@@ -1725,24 +1681,17 @@ export class SimulationEngine {
           'NODE-SUPERIOR', 99, 0.93, 0.94, 'CRITICAL',
           'Forest Fire chain complete. Flood chain starting.'
         );
-      }, 10200);
+      }, 4000);
 
       // ── CHAIN 3: FLOOD ──────────────────────────────────────────────────
-      // 12400 ms: Node1 → Node2
+      // 5200 ms: Node1 → Node2
       setTimeout(() => {
         if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
         this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', {
           event: 'FLOOD_PRELIM', water_m: 4.85, rain_mm_h: 68.0
         });
-      }, 12400);
-      // 14400 ms: Node2 → Node1
-      setTimeout(() => {
-        if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
-        this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', {
-          status: 'CORROBORATED_SURGE', water_m: 3.90
-        });
-      }, 14400);
-      // 16400 ms: Both → Watch Tower
+      }, 5200);
+      // 6600 ms: Both → Watch Tower
       setTimeout(() => {
         if (this.activeHazard?.type !== 'MULTI_HAZARD') return;
         this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
@@ -1753,16 +1702,16 @@ export class SimulationEngine {
         });
         this.addLedgerEntry(
           'NEIGHBOUR_RESPONSE',
-          'MULTI-HAZARD — FLOOD VERIFIED: Both nodes reported to Watch Tower. All three chains complete.',
+          'MULTI-HAZARD — FLOOD VERIFIED: All three chains complete.',
           'NODE-SUPERIOR', 99, 0.94, 0.97, 'CRITICAL',
           'All disaster chains verified. Watch Tower triggering emergency siren.'
         );
-      }, 16400);
+      }, 6600);
 
       // ── CONTINUOUS LOOP ─────────────────────────────────────────────────
       // Starts immediately alongside the intro chain and keeps firing every
       // 6 s so packets are always in-flight while MULTI_HAZARD is active.
-      const LOOP_INTERVAL_MS = 6000;
+      const LOOP_INTERVAL_MS = 4000;
       if (this._multiHazardLoopTimer !== null) {
         clearInterval(this._multiHazardLoopTimer);
       }
@@ -1838,9 +1787,11 @@ export class SimulationEngine {
       }
     }
 
-    // For MULTI_HAZARD, all three chains complete by ~16400ms; allow ~2000ms for the
-    // final packets to land at the Watch Tower before running evidence fusion.
-    const fusionDelay = this.activeHazard?.type === 'MULTI_HAZARD' ? 18500 : 1500;
+    // Fusion delay — waits for all packets to land before computing confidence & firing siren:
+    //   FLOOD / EXTREME_RAIN : last packet at 2100 ms, lands ~550 ms later → delay 3000 ms
+    //   MULTI_HAZARD         : last packet at 6600 ms → delay 7500 ms
+    //   All other hazards    : last packet at 2100 ms → delay 3000 ms
+    const fusionDelay = this.activeHazard?.type === 'MULTI_HAZARD' ? 7500 : 3000;
     setTimeout(() => {
       this.recomputeEvidenceFusion();
     }, fusionDelay);
@@ -2084,7 +2035,7 @@ export class SimulationEngine {
     // Advance active LoRa packets
     for (let i = this.activePackets.length - 1; i >= 0; i--) {
       const pkt = this.activePackets[i];
-      pkt.progress = (pkt.progress || 0) + dt * 0.55;
+      pkt.progress = (pkt.progress || 0) + dt * 1.8;
       if (pkt.progress >= 1.0) {
         soundManager.playPacketAck();
         this.activePackets.splice(i, 1);
