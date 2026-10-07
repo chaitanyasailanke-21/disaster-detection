@@ -42,42 +42,42 @@ export const ControlPanel: React.FC = () => {
   const currentNode = simulationEngine.nodes.find(n => n.id === chaosNode);
 
   return (
-    <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col gap-4 text-xs font-mono">
+    <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-4 flex flex-col gap-4 text-xs font-mono">
       {/* Panel Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div className="flex items-center gap-2">
           <Sliders className="w-4 h-4 text-sky-400" />
-          <span className="font-semibold text-slate-100 uppercase tracking-wide">
+          <span className="font-extrabold text-sm text-white uppercase tracking-wide">
             Disaster Simulation Engine
           </span>
         </div>
-        <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+        <span className="text-[11px] font-bold text-sky-200 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
           SIMULATED ENGINE
         </span>
       </div>
 
       {/* CORE INNOVATION SHOWCASE BUTTONS: FALSE ALARM vs CORROBORATED */}
       <div className="space-y-1.5">
-        <label className="text-amber-300 font-bold block text-[10px] uppercase tracking-wider">
+        <label className="text-amber-300 font-extrabold block text-xs uppercase tracking-wider">
           Decision Cascade Showcases:
         </label>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => simulationEngine.triggerFalseAlarmScenario()}
-            className="p-2.5 bg-amber-950/30 hover:bg-amber-950/50 border border-amber-500/50 rounded-lg text-left transition-colors"
+            className="p-2.5 bg-amber-950/40 hover:bg-amber-950/60 border border-amber-500/60 rounded-lg text-left transition-colors"
           >
-            <div className="font-bold text-amber-300 text-[11px]">FALSE ALARM SCENARIO</div>
-            <div className="text-[9px] text-slate-400 leading-tight mt-0.5">
+            <div className="font-extrabold text-amber-300 text-xs">FALSE ALARM SCENARIO</div>
+            <div className="text-[10px] font-bold text-slate-200 leading-tight mt-0.5">
               Low trust (38%) + Node 2 counter-evidence → No escalation!
             </div>
           </button>
 
           <button
             onClick={() => simulationEngine.triggerCorroboratedScenario()}
-            className="p-2.5 bg-sky-950/30 hover:bg-sky-950/50 border border-sky-500/50 rounded-lg text-left transition-colors"
+            className="p-2.5 bg-sky-950/40 hover:bg-sky-950/60 border border-sky-500/60 rounded-lg text-left transition-colors"
           >
-            <div className="font-bold text-sky-300 text-[11px]">CORROBORATED SCENARIO</div>
-            <div className="text-[9px] text-slate-400 leading-tight mt-0.5">
+            <div className="font-extrabold text-sky-300 text-xs">CORROBORATED SCENARIO</div>
+            <div className="text-[10px] font-bold text-slate-200 leading-tight mt-0.5">
               Re-sense + Node 2 corroboration → Escalates to CRITICAL.
             </div>
           </button>
@@ -86,97 +86,97 @@ export const ControlPanel: React.FC = () => {
 
       {/* Hazard Selector Matrix */}
       <div>
-        <label className="text-slate-400 block mb-1.5 uppercase text-[10px] tracking-wider">
+        <label className="text-white font-extrabold block mb-2 uppercase text-xs tracking-wider">
           Trigger Hazard Scenario:
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <button
             onClick={() => { setSelectedHazard('FOREST_FIRE'); simulationEngine.triggerHazard('FOREST_FIRE', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'FOREST_FIRE'
-                ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-amber-500/30 border-amber-400 text-amber-200 font-extrabold shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-amber-500/60'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Flame className="w-4 h-4 text-amber-400 shrink-0" />
             <div className="truncate">
-              <div>Forest Fire</div>
-              <div className="text-[9px] text-slate-400">Node 1 (ESP32-S3)</div>
+              <div className="font-extrabold text-xs">FOREST FIRE</div>
+              <div className="text-[10px] font-bold text-slate-300">Node 1 (ESP32-S3)</div>
             </div>
           </button>
 
           <button
             onClick={() => { setSelectedHazard('FLOOD'); simulationEngine.triggerHazard('FLOOD', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'FLOOD'
-                ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-blue-500/30 border-blue-400 text-blue-200 font-extrabold shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-blue-500/60'
             }`}
           >
-            <Droplets className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <Droplets className="w-4 h-4 text-blue-400 shrink-0" />
             <div className="truncate">
-              <div>River Flood</div>
-              <div className="text-[9px] text-slate-400">Node 2 (ESP32-S3)</div>
+              <div className="font-extrabold text-xs">RIVER FLOOD</div>
+              <div className="text-[10px] font-bold text-slate-300">Node 2 (ESP32-S3)</div>
             </div>
           </button>
 
           <button
             onClick={() => { setSelectedHazard('LANDSLIDE'); simulationEngine.triggerHazard('LANDSLIDE', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'LANDSLIDE'
-                ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 font-extrabold shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-emerald-500/60'
             }`}
           >
-            <Activity className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <Activity className="w-4 h-4 text-emerald-400 shrink-0" />
             <div className="truncate">
-              <div>Landslide</div>
-              <div className="text-[9px] text-slate-400">Slope Geophone</div>
+              <div className="font-extrabold text-xs">LANDSLIDE</div>
+              <div className="text-[10px] font-bold text-slate-300">Slope Geophone</div>
             </div>
           </button>
 
           <button
             onClick={() => { setSelectedHazard('EXTREME_RAIN'); simulationEngine.triggerHazard('EXTREME_RAIN', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'EXTREME_RAIN'
-                ? 'bg-sky-500/20 border-sky-500/60 text-sky-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-sky-500/30 border-sky-400 text-sky-200 font-extrabold shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-sky-500/60'
             }`}
           >
-            <CloudRain className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <CloudRain className="w-4 h-4 text-sky-400 shrink-0" />
             <div className="truncate">
-              <div>Extreme Rain</div>
-              <div className="text-[9px] text-slate-400">Corridor Wide</div>
+              <div className="font-extrabold text-xs">EXTREME RAIN</div>
+              <div className="text-[10px] font-bold text-slate-300">Corridor Wide</div>
             </div>
           </button>
 
           <button
             onClick={() => { setSelectedHazard('AIR_QUALITY_EVENT'); simulationEngine.triggerHazard('AIR_QUALITY_EVENT', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'AIR_QUALITY_EVENT'
-                ? 'bg-amber-500/25 border-amber-500/70 text-amber-300 font-semibold ring-1 ring-amber-500/40 shadow-sm'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-amber-700/60 hover:text-white'
+                ? 'bg-amber-500/30 border-amber-400 text-amber-200 font-extrabold ring-1 ring-amber-500/40 shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-amber-500/60'
             }`}
           >
-            <Wind className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+            <Wind className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
             <div className="truncate">
-              <div>Air Pollution</div>
-              <div className="text-[9px] text-amber-400/90 font-semibold">Smoke Detection</div>
+              <div className="font-extrabold text-xs">AIR POLLUTION</div>
+              <div className="text-[10px] text-amber-300 font-bold">Smoke Detection</div>
             </div>
           </button>
 
           <button
             onClick={() => { setSelectedHazard('MULTI_HAZARD'); simulationEngine.triggerHazard('MULTI_HAZARD', selectedSeverity); }}
-            className={`flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
               activeHazard?.type === 'MULTI_HAZARD'
-                ? 'bg-rose-500/20 border-rose-500/60 text-rose-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                ? 'bg-rose-500/30 border-rose-400 text-rose-200 font-extrabold shadow-md'
+                : 'bg-slate-950 border-slate-700 text-white font-bold hover:border-rose-500/60'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <Layers className="w-4 h-4 text-rose-400 shrink-0" />
             <div className="truncate">
-              <div>Multi-Hazard</div>
-              <div className="text-[9px] text-slate-400">Compound Risk</div>
+              <div className="font-extrabold text-xs">MULTI-HAZARD</div>
+              <div className="text-[10px] font-bold text-slate-300">Compound Risk</div>
             </div>
           </button>
         </div>
@@ -185,10 +185,10 @@ export const ControlPanel: React.FC = () => {
       {/* Severity & Speed Rows */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-slate-400 block mb-1 text-[10px] uppercase tracking-wider">
+          <label className="text-white font-extrabold block mb-1 text-xs uppercase tracking-wider">
             Severity:
           </label>
-          <div className="flex rounded-md bg-slate-950 p-1 border border-slate-800">
+          <div className="flex rounded-md bg-slate-950 p-1 border border-slate-700">
             {(['LOW', 'MEDIUM', 'HIGH'] as HazardSeverity[]).map(sev => (
               <button
                 key={sev}
@@ -196,10 +196,10 @@ export const ControlPanel: React.FC = () => {
                   setSelectedSeverity(sev);
                   if (activeHazard) simulationEngine.triggerHazard(activeHazard.type, sev);
                 }}
-                className={`flex-1 py-1 text-center rounded transition-colors text-[11px] ${
+                className={`flex-1 py-1 text-center rounded transition-colors text-xs font-extrabold ${
                   selectedSeverity === sev
-                    ? 'bg-sky-600 text-white font-semibold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 {sev}
@@ -209,18 +209,18 @@ export const ControlPanel: React.FC = () => {
         </div>
 
         <div>
-          <label className="text-slate-400 block mb-1 text-[10px] uppercase tracking-wider">
+          <label className="text-white font-extrabold block mb-1 text-xs uppercase tracking-wider">
             Simulation Speed:
           </label>
-          <div className="flex rounded-md bg-slate-950 p-1 border border-slate-800">
+          <div className="flex rounded-md bg-slate-950 p-1 border border-slate-700">
             {[1.0, 2.0, 5.0].map(spd => (
               <button
                 key={spd}
                 onClick={() => { simulationEngine.simulationSpeed = spd; setTick(t => t + 1); }}
-                className={`flex-1 py-1 text-center rounded transition-colors text-[11px] ${
+                className={`flex-1 py-1 text-center rounded transition-colors text-xs font-extrabold ${
                   simulationEngine.simulationSpeed === spd
-                    ? 'bg-sky-600 text-white font-semibold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 {spd}×
@@ -234,29 +234,29 @@ export const ControlPanel: React.FC = () => {
       <div className="flex items-center gap-2">
         <button
           onClick={() => simulationEngine.triggerHazard(selectedHazard, selectedSeverity)}
-          className="flex-1 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+          className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-sm"
         >
-          <Play className="w-3.5 h-3.5" />
+          <Play className="w-4 h-4" />
           <span>START HAZARD</span>
         </button>
 
         <button
           onClick={() => { simulationEngine.isPaused = !simulationEngine.isPaused; setTick(t => t + 1); }}
-          className={`px-3 py-2 border rounded-lg flex items-center justify-center gap-1 transition-colors ${
+          className={`px-3 py-2.5 border rounded-lg flex items-center justify-center gap-1 font-extrabold text-xs transition-colors ${
             simulationEngine.isPaused
-              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-              : 'border-slate-800 bg-slate-950 text-slate-300 hover:text-white'
+              ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+              : 'border-slate-700 bg-slate-950 text-white hover:bg-slate-800'
           }`}
         >
-          <Pause className="w-3.5 h-3.5" />
+          <Pause className="w-4 h-4" />
           <span>{simulationEngine.isPaused ? 'RESUME' : 'PAUSE'}</span>
         </button>
 
         <button
           onClick={() => simulationEngine.clearHazard()}
-          className="px-3 py-2 border border-slate-800 bg-slate-950 hover:bg-rose-950/40 hover:border-rose-800 text-slate-300 hover:text-rose-300 rounded-lg flex items-center justify-center gap-1 transition-colors"
+          className="px-3 py-2.5 border border-slate-700 bg-slate-950 hover:bg-rose-950/50 hover:border-rose-600 text-white hover:text-rose-200 font-extrabold text-xs rounded-lg flex items-center justify-center gap-1 transition-colors"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="w-4 h-4" />
           <span>CLEAR</span>
         </button>
       </div>
@@ -264,11 +264,11 @@ export const ControlPanel: React.FC = () => {
       {/* QUICK FAULT INJECTION */}
       <div className="border-t border-slate-800 pt-3">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px]">
-            <Zap className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 text-amber-300 font-extrabold text-xs">
+            <Zap className="w-4 h-4" />
             <span>QUICK SENSOR FAULT INJECTION</span>
           </div>
-          <span className="text-[9px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-bold text-slate-200 bg-slate-800 px-1.5 py-0.5 rounded">
             TRUST TEST
           </span>
         </div>

@@ -181,13 +181,12 @@ export class CinematicDemoManager {
     this.driver?.snapTo([-28, 60, 44], [-15, 0, 28]);
     await this.wait(0.05);
 
-    // Fly 1: slow descent — 6 s — trigger landslide at 3 s in
+    // Fly 1: slow descent — 6 s — trigger landslide at 2 s in so full 17-step narrative & beams play out
     this.driver?.flyTo([-20, 42, 50], [-12, 2, 28], 6.0, 'ease-in-out');
-    await this.wait(3.0);
+    await this.wait(2.0);
     simulationEngine.triggerHazard('LANDSLIDE', 'HIGH');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
     this.setPhase('LANDSLIDE', 0.4);
-    await this.wait(3.0); // finish fly 1
+    await this.wait(4.0); // finish fly 1
 
     // Fly 2: continue down + zoom out so hill + scar + river all fit — 5 s + 1.5 s hold
     await this.fly([-6, 28, 54], [-14, 1, 24], 5.0, 1.5, 'ease-out');
@@ -197,20 +196,6 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 3 — Flood  (~12 s)
-  //
-  // River runs full Z length: south end Z≈-76 (forest side) to north end Z≈+76 (hills/houses).
-  // Camera travels the FULL LENGTH of the river — one corner to the other.
-  //
-  //   Start corner: south-east of river, elevated, looking north-west up the river.
-  //     Forest is visible left, river runs ahead, open terrain right.
-  //     pos=(26, 20, -52)  look=(12, 0, -20)
-  //
-  //   Mid: glide forward — bridge becomes visible, flooding evident.
-  //     pos=(18, 12, -10)  look=(12, 0, 10)
-  //
-  //   End corner: north end of river — houses visible left, hills right.
-  //     pos=(22, 10, 38)  look=(12, 0, 20)
-  //     River has been followed its full length, flood spreading onto land.
   // ─────────────────────────────────────────────────────────────────────────
   private async actFlood() {
     this.setPhase('FLOOD', 0);
@@ -221,9 +206,8 @@ export class CinematicDemoManager {
     this.driver?.snapTo([26, 20, -52], [12, 0, -20]);
     await this.wait(0.3);
 
-    // Trigger flood — camera at south end, water starts rising
+    // Trigger flood — camera at south end, water starts rising & narrative cascade runs
     simulationEngine.triggerHazard('FLOOD', 'HIGH');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
     this.setPhase('FLOOD', 0.2);
 
     // Travel north along the river — bridge area becomes visible
@@ -238,20 +222,6 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 4 — Forest Fire  (~8 s)
-  //
-  // Forest: X -48→0, Z -36→+6.  NODE-2: (-16, 1.2, -12).
-  // Burning trees: X -13→-22, Z -10→-18.
-  //
-  // Long wide shot only. Camera positioned east of forest looking west so
-  // fire glow fills the frame. Stays far throughout.
-  //
-  //   Snap:   East of forest, mid-height, looking west into canopy.
-  //           pos=(12, 24, 6)  look=(-16, 1, -12)
-  //           → trigger fire immediately
-  //
-  //   Fly 1:  Slow drift south — keeps fire zone front and centre,
-  //           slight angle change shows smoke rising.
-  //           pos=(6, 22, -6)  look=(-18, 1, -14)    6 s + 2 s hold
   // ─────────────────────────────────────────────────────────────────────────
   private async actForestFire() {
     this.setPhase('FOREST_FIRE', 0);
@@ -262,7 +232,6 @@ export class CinematicDemoManager {
     await this.wait(0.05);
 
     simulationEngine.triggerHazard('FOREST_FIRE', 'HIGH');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
     this.setPhase('FOREST_FIRE', 0.3);
 
     // Slow drift south — fire visible the whole time
@@ -273,19 +242,6 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 5 — Air Pollution  (~8 s)
-  //
-  // Factory: (44, 5, -36).  Chimneys: (50,25,-45.5), (54,19,-42), (52,15,-30).
-  //
-  // Camera placed NORTH of factory looking SOUTH — chimneys project upward
-  // into open sky, smoke columns clearly readable against blue/hazy sky.
-  //
-  //   Snap:   North-east, mid-high, looking south toward chimneys.
-  //           pos=(52, 24, 6)  look=(50, 14, -44)
-  //           → trigger air quality
-  //
-  //   Fly 1:  Pull back north-west — factory stays in lower frame,
-  //           smoke columns grow taller against sky.
-  //           pos=(36, 32, 4)  look=(50, 16, -42)    6 s + 2 s hold
   // ─────────────────────────────────────────────────────────────────────────
   private async actAirPollution() {
     this.setPhase('AIR_POLLUTION', 0);
@@ -296,7 +252,6 @@ export class CinematicDemoManager {
     await this.wait(0.05);
 
     simulationEngine.triggerHazard('AIR_QUALITY_EVENT', 'HIGH');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
     this.setPhase('AIR_POLLUTION', 0.3);
 
     await this.fly([36, 32, 4], [50, 16, -42], 6.0, 2.0, 'ease-in-out');
@@ -306,12 +261,6 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 6 — Heavy Rain  (~8 s)
-  //
-  // Rain fix: clearHazard() resets weather to CLEAR internally.
-  // We call clearHazard() first (removes AIR_QUALITY_EVENT which forces
-  // FIRE_HAZE), then immediately call setWeather('RAIN') twice — the second
-  // call lands AFTER clearHazard's internal reset, overriding it cleanly.
-  // Then triggerHazard('EXTREME_RAIN') keeps weather at STORM.
   // ─────────────────────────────────────────────────────────────────────────
   private async actHeavyRain() {
     this.setPhase('HEAVY_RAIN', 0);
@@ -326,18 +275,13 @@ export class CinematicDemoManager {
     simulationEngine.setWeather('RAIN');
 
     this.driver?.startOrbit([0, 0, 0], 70, 48, 0.08);
-    await this.wait(2.5);
+    await this.wait(1.0);
 
-    simulationEngine.setWeather('HEAVY_RAIN');
-    this.setPhase('HEAVY_RAIN', 0.3);
-    await this.wait(2.0);
-
-    // EXTREME_RAIN sets weather to STORM internally — keeps rain going
+    // EXTREME_RAIN sets weather to STORM internally and runs the 17-step narrative
     simulationEngine.triggerHazard('EXTREME_RAIN', 'HIGH');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
-    this.setPhase('HEAVY_RAIN', 0.6);
+    this.setPhase('HEAVY_RAIN', 0.4);
 
-    await this.wait(3.5);
+    await this.wait(7.0);
     this.driver?.stopOrbit();
 
     this.setPhase('HEAVY_RAIN', 1);
@@ -345,26 +289,13 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 7 — Multihazard  (~14 s)
-  //
-  // SINGLE VIEW — the exact composition from the screenshot:
-  //   Forest + landslide (top-left), flooded river (center),
-  //   watchtower siren rings + factory chimney (top-right),
-  //   village houses (bottom-right), rain falling everywhere.
-  //
-  // Camera: south-east of the scene, elevated, looking north-west.
-  //   pos=(52, 40, 52)  look=(-4, 1, 0)
-  //
-  // All 4 hazards triggered simultaneously before the snap.
-  // Hold the view with a very slow gentle drift — no orbit, no beat cuts.
   // ─────────────────────────────────────────────────────────────────────────
   private async actMultiHazard() {
     this.setPhase('MULTIHAZARD', 0);
 
     // Trigger all disasters simultaneously via MULTI_HAZARD
-    // ThreeScene now reads MULTI_HAZARD for: isFire, isFlood, isLandslide, isAirPollution
     simulationEngine.triggerHazard('MULTI_HAZARD', 'HIGH');
     simulationEngine.setWeather('STORM');
-    simulationEngine.triggerWatchtowerAlarm(true, 'SIREN');
 
     // Snap to the composition:
     // forest+fire top-left, river center, watchtower + factory chimneys right

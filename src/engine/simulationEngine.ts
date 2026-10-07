@@ -449,148 +449,168 @@ export const JUDGE_DEMO_STEPS: DemoStep[] = [
   {
     stepIndex: 1,
     totalSteps: 9,
-    phase: 'NATURAL EQUILIBRIUM',
-    title: '1. Natural Daylight Baseline (Forest, River, Village)',
-    description: 'Bright realistic daylight across the 3D digital twin. Two physical field nodes operate at 1.0 Hz baseline telemetry over SX1262 LoRa mesh.',
-    technicalDetail: 'Daylight equilibrium. Node 1 ultrasonic water baseline: 1.25m. Node 2 gas baseline: 16 ppm. Sensor trust: 95%. Hazard confidence: 0.05.',
-    aegisCallout: 'System: "Wide-area intelligence tells us WHERE to watch. Distributed edge nodes tell us WHAT is happening locally."',
+    phase: '1. NORMAL → RAIN / DISASTER OCCURRENCE',
+    title: '1. NORMAL → Environmental Change & Rain Occurrence',
+    description: 'System begins in NORMAL state. Rain / environmental change / disaster occurrence begins across the catchment.',
+    technicalDetail: 'NORMAL ↓ RAIN / ENVIRONMENTAL CHANGE / DISASTER OCCURRENCE. Baseline sensors monitor at 1.0 Hz.',
+    aegisCallout: 'NARRATIVE: NORMAL ↓ RAIN / ENVIRONMENTAL CHANGE / DISASTER OCCURRENCE',
     systemState: 'NORMAL',
-    weather: 'CLEAR',
+    weather: 'RAIN',
     cameraMode: 'COMMAND_CENTER',
     hazardConfidence: 0.05,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 2,
     totalSteps: 9,
-    phase: 'RAIN BEGINS',
-    title: '2. Environmental Transition: Rain Commences',
-    description: 'Sky transitions to grey/white overcast daylight with high visibility. Rain streaks and road surface puddles appear. River water begins gradual accumulation.',
-    technicalDetail: 'Daylight overcast atmosphere. Optical rainfall sensor registers initial precip (28 mm/h). Water level starts rising.',
-    aegisCallout: 'Realistic atmospheric rain: High visibility daylight overcast, glistening wet surfaces.',
-    systemState: 'NORMAL',
-    weather: 'RAIN',
+    phase: '2. ANOMALY DETECTED → "IS THIS REAL?"',
+    title: '2. ANOMALY DETECTED → "IS THIS REAL?"',
+    description: 'Primary edge node detects an environmental anomaly. Instead of triggering a false alarm immediately, the edge intelligence asks: "IS THIS REAL?"',
+    technicalDetail: 'ANOMALY DETECTED ↓ "IS THIS REAL?" — Single sensor spike isolated for local verification.',
+    aegisCallout: 'NARRATIVE: ANOMALY DETECTED ↓ "IS THIS REAL?"',
+    systemState: 'WATCH',
+    weather: 'HEAVY_RAIN',
     cameraMode: 'FLOOD_OVERVIEW',
-    hazardConfidence: 0.20,
+    hazardConfidence: 0.35,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 3,
     totalSteps: 9,
-    phase: 'ANOMALY DETECTED',
-    title: '3. Node 01: Water Level Anomaly Detected',
-    description: 'Node 1 HC-SR04 ultrasonic sensor detects rapid surge (3.45m). Optical rain sensor registers 68 mm/h.',
-    technicalDetail: 'Threshold crossed. Conventional systems declare immediate flood alarm. The system isolates sensor hardware health before escalating.',
-    aegisCallout: 'Single sensor reading ≠ Automatic disaster. Evaluating sensor trust before escalating.',
-    systemState: 'WATCH',
-    weather: 'HEAVY_RAIN',
-    cameraMode: 'NODE_INSPECTION',
-    hazardConfidence: 0.38,
-    node1Trust: 95,
-    node2Trust: 94,
-    durationMs: 9000
-  },
-  {
-    stepIndex: 4,
-    totalSteps: 9,
-    phase: 'ADAPTIVE RE-SENSING',
-    title: '4. Local Re-Sensing Triggered (5 Hz Burst)',
-    description: 'Node 1 spikes its sampling rate from 1.0 Hz to 5.0 Hz to verify that the water rise is genuine and not momentary wave turbulence or splash.',
-    technicalDetail: 'Adaptive burst sampling active. 5 rapid acoustic echo samples confirm sustained elevation (3.62m). Wave splash discarded.',
-    aegisCallout: 'Adaptive re-sensing active (5 Hz burst). Persistence confirmed locally at the edge.',
+    phase: '3. RE-SENSE → PERSISTENT EVIDENCE',
+    title: '3. RE-SENSE (5 Hz Burst) → PERSISTENT EVIDENCE',
+    description: 'Node spikes sampling from 1 Hz to 5 Hz (RE-SENSE) and confirms PERSISTENT EVIDENCE rather than transient noise.',
+    technicalDetail: 'RE-SENSE ↓ PERSISTENT EVIDENCE — 5 Hz adaptive burst confirms sustained physical hazard.',
+    aegisCallout: 'NARRATIVE: RE-SENSE ↓ PERSISTENT EVIDENCE',
     systemState: 'WATCH',
     weather: 'HEAVY_RAIN',
     cameraMode: 'NODE_INSPECTION',
     hazardConfidence: 0.52,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
+  },
+  {
+    stepIndex: 4,
+    totalSteps: 9,
+    phase: '4. "ASK THE NEIGHBOUR" → LoRa VERIFY_REQUEST',
+    title: '4. "ASK THE NEIGHBOUR" → LoRa VERIFY_REQUEST Beam',
+    description: 'Primary node executes "ASK THE NEIGHBOUR" and transmits a LoRa VERIFY_REQUEST energy beam to its neighbouring node.',
+    technicalDetail: '"ASK THE NEIGHBOUR" ↓ LoRa VERIFY_REQUEST — Peer-to-peer SX1262 LoRa verification beam active.',
+    aegisCallout: 'NARRATIVE: "ASK THE NEIGHBOUR" ↓ LoRa VERIFY_REQUEST',
+    systemState: 'WATCH',
+    weather: 'HEAVY_RAIN',
+    cameraMode: 'NETWORK_VIEW',
+    hazardConfidence: 0.62,
+    node1Trust: 95,
+    node2Trust: 94,
+    durationMs: 8000
   },
   {
     stepIndex: 5,
     totalSteps: 9,
-    phase: 'NEIGHBOUR VERIFICATION',
-    title: '5. LoRa Peer Verification: Node 1 ↔ Node 2',
-    description: 'Node 1 dispatches a VERIFY_REQUEST packet directly to Node 2 via SX1262 LoRa mesh. Node 2 samples corridor atmospheric sensors.',
-    technicalDetail: 'Peer-to-peer LoRa packet travels across the 3D terrain. Node 2 confirms regional storm humidity (96%) and rainfall downpour.',
-    aegisCallout: 'EVIDENCE CORROBORATED: Node 2 confirms supporting catchment rainfall.',
+    phase: '5. INDEPENDENT CORROBORATION → LoRa VERIFY_RESPONSE',
+    title: '5. INDEPENDENT CORROBORATION → LoRa VERIFY_RESPONSE Beam',
+    description: 'Neighbouring node performs INDEPENDENT CORROBORATION and beams back a LoRa VERIFY_RESPONSE confirming the disaster.',
+    technicalDetail: 'INDEPENDENT CORROBORATION ↓ LoRa VERIFY_RESPONSE — Dual-node corroboration achieved.',
+    aegisCallout: 'NARRATIVE: INDEPENDENT CORROBORATION ↓ LoRa VERIFY_RESPONSE',
     systemState: 'WATCH',
     weather: 'STORM',
     cameraMode: 'NETWORK_VIEW',
-    hazardConfidence: 0.68,
+    hazardConfidence: 0.74,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 6,
     totalSteps: 9,
-    phase: 'EVIDENCE FUSION',
-    title: '6. Multi-Source Evidence Fusion & Hazard Escalation',
-    description: 'Local Computer receives corroborated evidence packets. Bayesian evidence fusion converges independent observations into verified probability.',
-    technicalDetail: 'Ultrasonic rise + optical rainfall + corridor humidity converge. Hazard confidence crosses escalation threshold to 0.82.',
-    aegisCallout: 'HAZARD CONFIDENCE ↑: Evidence converged, crossing the mathematical warning threshold.',
+    phase: '6. SUPERIOR NODE → EVIDENCE FUSION',
+    title: '6. SUPERIOR NODE → EVIDENCE FUSION',
+    description: 'Verified telemetry beams converge on the Watch Tower 01 SUPERIOR NODE for Bayesian EVIDENCE FUSION.',
+    technicalDetail: 'SUPERIOR NODE ↓ EVIDENCE FUSION ↓ CONFIDENCE > ALERT THRESHOLD (0.88 > 0.75).',
+    aegisCallout: 'NARRATIVE: SUPERIOR NODE ↓ EVIDENCE FUSION ↓ CONFIDENCE > ALERT THRESHOLD',
     systemState: 'WARNING',
     weather: 'STORM',
-    cameraMode: 'COMMAND_CENTER',
-    hazardConfidence: 0.82,
+    cameraMode: 'WATCHTOWER_FOCUS',
+    hazardConfidence: 0.88,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 7,
     totalSteps: 9,
-    phase: 'FLOOD WARNING',
-    title: '7. Floodplain Warning Active — River Surges Into Village',
-    description: 'River water breaks bank and visibly inundates low-lying village road. Audible alert chime sounds. Evidence Ledger generates explainable alert certificate.',
-    technicalDetail: 'System state: WARNING. Water surface rises to +0.38m overflow. Roads visibly wet with dynamic reflections.',
-    aegisCallout: 'Alert threshold crossed: Floodplain WARNING active with explainable audit certificate.',
-    systemState: 'WARNING',
+    phase: '7. CONFIDENCE > ALERT THRESHOLD → WARNING → BUZZER / SIREN',
+    title: '7. WARNING → 120dB WATCH TOWER BUZZER / SIREN',
+    description: 'CONFIDENCE > ALERT THRESHOLD triggers system WARNING and activates the Watch Tower 01 quad-horn BUZZER / SIREN.',
+    technicalDetail: 'CONFIDENCE > ALERT THRESHOLD ↓ WARNING ↓ BUZZER / SIREN — Village acoustic evacuation shockwaves active.',
+    aegisCallout: 'NARRATIVE: CONFIDENCE > ALERT THRESHOLD ↓ WARNING ↓ BUZZER / SIREN',
+    systemState: 'CRITICAL',
     weather: 'STORM',
-    cameraMode: 'FLOOD_OVERVIEW',
-    hazardConfidence: 0.90,
+    cameraMode: 'WATCHTOWER_FOCUS',
+    hazardConfidence: 0.94,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 8,
     totalSteps: 9,
-    phase: 'CHAOS TEST',
-    title: '8. Internet Failure: Complete Edge Autonomy',
-    description: 'External cloud & internet connectivity severed! Notice that the Local Command Workstation and LoRa mesh continue running with zero downtime.',
-    technicalDetail: 'INTERNET OFFLINE · LOCAL LORA ONLINE · LOCAL PROCESSING ONLINE. Complete edge independence without reliance on cloud servers.',
-    aegisCallout: 'INTERNET OFFLINE · LOCAL LORA ONLINE: Edge grid operates completely autonomous.',
-    systemState: 'WARNING',
+    phase: '8. WAN FAILURE → LOCAL EDGE OPERATION CONTINUES',
+    title: '8. WAN FAILURE → LOCAL EDGE OPERATION CONTINUES',
+    description: 'External WAN / cloud internet fails completely (WAN FAILURE), yet LOCAL EDGE OPERATION CONTINUES autonomously over LoRa.',
+    technicalDetail: 'WAN FAILURE ↓ LOCAL EDGE OPERATION CONTINUES — 100% zero-cloud edge resilience.',
+    aegisCallout: 'NARRATIVE: WAN FAILURE ↓ LOCAL EDGE OPERATION CONTINUES',
+    systemState: 'CRITICAL',
     weather: 'STORM',
     cameraMode: 'COMMAND_CENTER',
-    hazardConfidence: 0.90,
+    hazardConfidence: 0.94,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 9000
+    durationMs: 8000
   },
   {
     stepIndex: 9,
     totalSteps: 9,
-    phase: 'TARGETED DEPLOYMENT',
-    title: '9. Targeted Risk-Adaptive Deployment & Validation',
-    description: 'Camera pulls back to high aerial view. High-risk zones are highlighted. Targeted placement puts intelligence where risk and information value are highest — not everywhere.',
-    technicalDetail: '2-Node Physical Prototype (ESP32-S3 + SX1262) validated. Targeted deployment eliminates wasteful dense grid sensing.',
-    aegisCallout: 'System: "Sense where risk is highest. Corroborate where evidence is uncertain. Evidence Before Escalation."',
-    systemState: 'WARNING',
+    phase: '9. LOCAL EDGE OPERATION CONTINUES',
+    title: '9. Autonomous Edge Grid & Targeted Deployment',
+    description: 'Full cooperative edge intelligence loop verified from NORMAL to LOCAL EDGE OPERATION CONTINUES.',
+    technicalDetail: 'All 17 narrative stages verified on 3D digital twin.',
+    aegisCallout: 'NARRATIVE COMPLETE: LOCAL EDGE OPERATION CONTINUES',
+    systemState: 'CRITICAL',
     weather: 'CLEAR',
     cameraMode: 'DEPLOYMENT_AERIAL',
-    hazardConfidence: 0.90,
+    hazardConfidence: 0.94,
     node1Trust: 95,
     node2Trust: 94,
-    durationMs: 12000
+    durationMs: 10000
   }
 ];
+
+export const NARRATIVE_FLOW_STEPS = [
+  'NORMAL',
+  'RAIN / ENVIRONMENTAL CHANGE / DISASTER OCCURRENCE',
+  'ANOMALY DETECTED',
+  '"IS THIS REAL?"',
+  'RE-SENSE',
+  'PERSISTENT EVIDENCE',
+  '"ASK THE NEIGHBOUR"',
+  'LoRa VERIFY_REQUEST',
+  'INDEPENDENT CORROBORATION',
+  'LoRa VERIFY_RESPONSE',
+  'SUPERIOR NODE',
+  'EVIDENCE FUSION',
+  'CONFIDENCE > ALERT THRESHOLD',
+  'WARNING',
+  'BUZZER / SIREN',
+  'WAN FAILURE',
+  'LOCAL EDGE OPERATION CONTINUES'
+] as const;
 
 export class SimulationEngine {
   // Prototype nodes: exactly 2 physical ESP32-S3 nodes
@@ -724,6 +744,33 @@ export class SimulationEngine {
   public isFalseAlarmScenarioActive: boolean = false;
   public falseAlarmBanner: string | null = null;
   public confirmedEventBanner: string | null = null;
+
+  // 17-Step Narrative Flow State
+  public currentNarrativeStepIndex: number = 0;
+  public currentNarrativeStepLabel: string = NARRATIVE_FLOW_STEPS[0];
+  private narrativeTimerIds: Array<ReturnType<typeof setTimeout>> = [];
+
+  public setNarrativeStep(index: number) {
+    const clamped = Math.max(0, Math.min(NARRATIVE_FLOW_STEPS.length - 1, index));
+    this.currentNarrativeStepIndex = clamped;
+    this.currentNarrativeStepLabel = NARRATIVE_FLOW_STEPS[clamped];
+    this.notify();
+  }
+
+  private clearNarrativeTimers() {
+    this.narrativeTimerIds.forEach(id => clearTimeout(id));
+    this.narrativeTimerIds = [];
+  }
+
+  private scheduleNarrativeStep(delayMs: number, stepIndex: number, action?: () => void) {
+    const tid = setTimeout(() => {
+      this.currentNarrativeStepIndex = stepIndex;
+      this.currentNarrativeStepLabel = NARRATIVE_FLOW_STEPS[stepIndex] || 'NORMAL';
+      if (action) action();
+      this.notify();
+    }, delayMs);
+    this.narrativeTimerIds.push(tid);
+  }
 
   // 90-second judge demo mode
   public isDemoRunning: boolean = false;
@@ -1161,20 +1208,24 @@ export class SimulationEngine {
   }
 
   public clearHazard() {
+    this.clearNarrativeTimers();
     this.activeHazard = null;
     this.activeScenarioName = 'NORMAL_NETWORK';
     this.isFalseAlarmScenarioActive = false;
     this.falseAlarmBanner = null;
     this.confirmedEventBanner = null;
+    this.isInternetOnline = true;
+    this.setNarrativeStep(0);
     this.setWeather('CLEAR');
     this.triggerWatchtowerAlarm(false);
     this.resetSensorsToBaseline();
     this.recomputeEvidenceFusion();
-    this.addLog('HAZARD', 'Hazard Cleared', 'System returned to equilibrium.', 'info');
+    this.addLog('HAZARD', 'Hazard Cleared', 'System returned to equilibrium (NORMAL).', 'info');
     this.notify();
   }
 
   public resetSensorsToBaseline() {
+    this.clearNarrativeTimers();
     this.prototypeNodes.forEach(node => {
       node.state = 'NORMAL';
       node.isReSensing = false;
@@ -1192,6 +1243,8 @@ export class SimulationEngine {
 
     this.aggregatedHazardConfidence = 0.05;
     this.systemState = 'NORMAL';
+    this.currentNarrativeStepIndex = 0;
+    this.currentNarrativeStepLabel = NARRATIVE_FLOW_STEPS[0];
     this.evidencePool = [];
     this.activePackets = [];
     this.recordConfidencePoint('Reset to baseline');
@@ -1208,401 +1261,549 @@ export class SimulationEngine {
   private propagateHazardToSensors() {
     if (!this.activeHazard) return;
 
-    if (this.activeHazard.type === 'FLOOD' || this.activeHazard.type === 'EXTREME_RAIN') {
-      // 1. Flood Node 1 (X: 17.6, Z: -53.3, upstream mountain river gorge) detects surge first
-      const floodNode1 = this.getNode('NODE-FLOOD-1');
-      const floodNode2 = this.getNode('NODE-1'); // Flood Node 2 at [7.2, -0.42, 32.2]
-      if (floodNode1) {
-        floodNode1.sensors.forEach(s => {
-          if (s.type === 'WATER_LEVEL_ULTRASONIC') {
-            s.value = 4.85;
-            s.isAnomaly = true;
-          }
-          if (s.type === 'RAINFALL_OPTICAL') {
-            s.value = 68.0;
-            s.isAnomaly = true;
-          }
-        });
-        floodNode1.state = 'WATCH';
-        floodNode1.localHazardConfidence = 0.76;
-        floodNode1.isReSensing = true;
-        floodNode1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst!
+    this.clearNarrativeTimers();
+    this.activePackets = [];
+    this.isInternetOnline = true;
 
-        this.addLedgerEntry(
-          'ANOMALY', 
-          'FLOOD DETECTED BY NODE 1: Flood Node 1 (X: 17.6, Z: -53.3) ultrasonic water level breached (4.85m > 3.90m)', 
-          floodNode1.id, 
-          floodNode1.overallSensorTrustPct, 
-          0.05, 
-          0.76, 
-          'WATCH', 
-          'Mountain runoff surge detected at upstream gorge. Clarifying event with Flood Node 2.'
-        );
+    const hType = this.activeHazard.type;
+    const isFlood = hType === 'FLOOD' || hType === 'EXTREME_RAIN' || hType === 'MULTI_HAZARD';
+    const isFire = hType === 'FOREST_FIRE' || hType === 'MULTI_HAZARD';
+    const isLandslide = hType === 'LANDSLIDE' || hType === 'MULTI_HAZARD';
+    const isAirQuality = hType === 'AIR_QUALITY_EVENT' || hType === 'MULTI_HAZARD';
+    const isHeat = hType === 'EXTREME_HEAT';
 
-        // Step 1: Flood Node 1 clarifies with Flood Node 2
+    // STEP 1: RAIN / ENVIRONMENTAL CHANGE / DISASTER OCCURRENCE
+    this.setNarrativeStep(1);
+
+    // STEP 2: ANOMALY DETECTED (350ms)
+    this.scheduleNarrativeStep(350, 2, () => {
+      if (isFlood) {
+        const floodNode1 = this.getNode('NODE-FLOOD-1');
+        if (floodNode1) {
+          floodNode1.sensors.forEach(s => {
+            if (s.type === 'WATER_LEVEL_ULTRASONIC') {
+              s.value = 4.85;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'RAINFALL_OPTICAL') {
+              s.value = 68.0;
+              s.isAnomaly = true;
+            }
+          });
+          floodNode1.state = 'WATCH';
+          floodNode1.localHazardConfidence = 0.62;
+          this.addLedgerEntry(
+            'ANOMALY',
+            'ANOMALY DETECTED: Flood Node 1 (X: 17.6, Z: -53.3) ultrasonic water level breached (4.85m > 3.90m)',
+            floodNode1.id,
+            floodNode1.overallSensorTrustPct,
+            0.05,
+            0.62,
+            'WATCH',
+            'NARRATIVE: NORMAL ↓ RAIN / DISASTER OCCURRENCE ↓ ANOMALY DETECTED'
+          );
+        }
+      }
+
+      if (isFire) {
+        const fireNode1 = this.getNode('NODE-2');
+        if (fireNode1) {
+          fireNode1.sensors.forEach(s => {
+            if (s.type === 'SMOKE_MQ2') {
+              s.value = 185.0;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'TEMP_BME688') {
+              s.value = 49.5;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'FLAME_IR') {
+              s.value = 1.0;
+              s.isAnomaly = true;
+            }
+          });
+          fireNode1.state = 'WATCH';
+          fireNode1.localHazardConfidence = 0.64;
+          this.addLedgerEntry(
+            'ANOMALY',
+            'ANOMALY DETECTED: Forest Fire Node 1 (X: -16.0, Z: -12.0) detected smoke spike (185 ppm) & heat (49.5°C)',
+            fireNode1.id,
+            fireNode1.overallSensorTrustPct,
+            0.05,
+            0.64,
+            'WATCH',
+            'NARRATIVE: NORMAL ↓ ENVIRONMENTAL CHANGE ↓ ANOMALY DETECTED'
+          );
+        }
+      }
+
+      if (isLandslide) {
+        const lsNode1 = this.getNode('NODE-3');
+        if (lsNode1) {
+          lsNode1.sensors.forEach(s => {
+            if (s.type === 'VIBRATION_GEOPHONE') {
+              s.value = 1.48;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'HUMIDITY_DHT') {
+              s.value = 94.0;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'RAINFALL_OPTICAL') {
+              s.value = 52.0;
+              s.isAnomaly = true;
+            }
+          });
+          lsNode1.state = 'WATCH';
+          lsNode1.localHazardConfidence = 0.68;
+          this.addLedgerEntry(
+            'ANOMALY',
+            'ANOMALY DETECTED: Landslide Node 1 (X: -35.7, Z: 41.7) detected slope shear (1.48 g) & soil saturation (94%)',
+            lsNode1.id,
+            lsNode1.overallSensorTrustPct,
+            0.04,
+            0.68,
+            'WATCH',
+            'NARRATIVE: NORMAL ↓ RAIN / ENVIRONMENTAL CHANGE ↓ ANOMALY DETECTED'
+          );
+        }
+      }
+
+      if (isAirQuality && !isFire) {
+        const node2 = this.getNode('NODE-2');
+        if (node2) {
+          node2.sensors.forEach(s => {
+            if (s.type === 'SMOKE_MQ2') {
+              s.value = 245.0;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'GAS_MQ135') {
+              s.value = 275.0;
+              s.isAnomaly = true;
+            }
+          });
+          node2.state = 'WATCH';
+          node2.localHazardConfidence = 0.66;
+        }
+      }
+
+      if (isHeat) {
+        const node1 = this.getNode('NODE-1');
+        if (node1) {
+          node1.sensors.forEach(s => {
+            if (s.type === 'TEMP_BME688') {
+              s.value = 47.2;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'HUMIDITY_DHT') {
+              s.value = 13.0;
+              s.isAnomaly = true;
+            }
+          });
+          node1.state = 'WATCH';
+          node1.localHazardConfidence = 0.65;
+        }
+      }
+
+      this.systemState = 'WATCH';
+      this.aggregatedHazardConfidence = 0.38;
+    });
+
+    // STEP 3: "IS THIS REAL?" (700ms)
+    this.scheduleNarrativeStep(700, 3, () => {
+      this.addLog(
+        'SENSOR',
+        'Edge Intelligence Check: "IS THIS REAL?"',
+        'Single sensor threshold breach isolated. Evaluating sensor trust and initiating adaptive re-sensing before escalating.',
+        'info'
+      );
+    });
+
+    // STEP 4: RE-SENSE (1050ms)
+    this.scheduleNarrativeStep(1050, 4, () => {
+      if (isFlood) {
+        const floodNode1 = this.getNode('NODE-FLOOD-1');
+        if (floodNode1) {
+          floodNode1.isReSensing = true;
+          floodNode1.samplingRateHz = 5.0;
+          floodNode1.sensors.forEach(s => {
+            if (s.isAnomaly) s.reSensingActive = true;
+          });
+        }
+      }
+      if (isFire || isAirQuality) {
+        const fireNode1 = this.getNode('NODE-2');
+        if (fireNode1) {
+          fireNode1.isReSensing = true;
+          fireNode1.samplingRateHz = 5.0;
+          fireNode1.sensors.forEach(s => {
+            if (s.isAnomaly) s.reSensingActive = true;
+          });
+        }
+      }
+      if (isLandslide) {
+        const lsNode1 = this.getNode('NODE-3');
+        if (lsNode1) {
+          lsNode1.isReSensing = true;
+          lsNode1.samplingRateHz = 5.0;
+          lsNode1.sensors.forEach(s => {
+            if (s.isAnomaly) s.reSensingActive = true;
+          });
+        }
+      }
+      if (isHeat) {
+        const node1 = this.getNode('NODE-1');
+        if (node1) {
+          node1.isReSensing = true;
+          node1.samplingRateHz = 5.0;
+          node1.sensors.forEach(s => {
+            if (s.isAnomaly) s.reSensingActive = true;
+          });
+        }
+      }
+      this.aggregatedHazardConfidence = 0.48;
+    });
+
+    // STEP 5: PERSISTENT EVIDENCE (1400ms)
+    this.scheduleNarrativeStep(1400, 5, () => {
+      this.aggregatedHazardConfidence = 0.56;
+      this.addLedgerEntry(
+        'RE_SENSE',
+        'PERSISTENT EVIDENCE CONFIRMED: 5.0 Hz adaptive burst verified sustained physical anomaly (transient noise ruled out)',
+        isFlood ? 'NODE-FLOOD-1' : isLandslide ? 'NODE-3' : 'NODE-2',
+        96,
+        0.38,
+        0.56,
+        'WATCH',
+        'NARRATIVE: "IS THIS REAL?" ↓ RE-SENSE ↓ PERSISTENT EVIDENCE'
+      );
+    });
+
+    // STEP 6: "ASK THE NEIGHBOUR" (1750ms)
+    this.scheduleNarrativeStep(1750, 6, () => {
+      this.addLog(
+        'LORA',
+        'Cooperative Protocol: "ASK THE NEIGHBOUR"',
+        'Local persistence confirmed. Preparing peer-to-peer LoRa VERIFY_REQUEST to neighbouring sensor node.',
+        'info'
+      );
+    });
+
+    // STEP 7: LoRa VERIFY_REQUEST (2100ms) — Braided Cyan Beam from Primary Node -> Neighbour Node
+    this.scheduleNarrativeStep(2100, 7, () => {
+      if (isFlood) {
         this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', {
           event: 'FLOOD_PRELIM',
           water_m: 4.85,
           rain_mm_h: 68.0
         });
-
-        // Step 2: Flood Node 2 clarifies and corroborates
-        setTimeout(() => {
-          if (floodNode2 && (this.activeHazard?.type === 'FLOOD' || this.activeHazard?.type === 'EXTREME_RAIN')) {
-            floodNode2.sensors.forEach(s => {
-              if (s.type === 'WATER_LEVEL_ULTRASONIC') {
-                s.value = 3.90;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'HUMIDITY_DHT') {
-                s.value = 95.0;
-                s.isAnomaly = true;
-              }
-            });
-            floodNode2.isCorroborating = true;
-            floodNode2.state = 'WARNING';
-            floodNode2.localHazardConfidence = 0.89;
-
-            this.addLedgerEntry(
-              'NEIGHBOUR_RESPONSE',
-              'FLOOD CORROBORATION: Flood Node 2 (X: 7.2, Z: 32.2) confirmed downstream embankment surge (3.90m)',
-              floodNode2.id,
-              floodNode2.overallSensorTrustPct,
-              0.76,
-              0.94,
-              'CRITICAL',
-              'Downstream river corridor surge confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
-            );
-
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_SURGE',
-              water_m: 3.90
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FLOOD_VERIFIED',
-              water_m: 4.85,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FLOOD_CORROBORATION',
-              water_m: 3.90
-            });
-          }
-        }, 700);
       }
-    } else if (this.activeHazard.type === 'FOREST_FIRE') {
-      // 1. Forest Fire Node 1 (X: -16.0, Z: -12.0) detects smoke & heat first
-      const fireNode1 = this.getNode('NODE-2'); // Forest Fire Node 1
-      const fireNode2 = this.getNode('NODE-FIRE-2'); // Forest Fire Node 2 at [X: -41.6, Z: -38.8]
-      if (fireNode1) {
-        fireNode1.sensors.forEach(s => {
-          if (s.type === 'SMOKE_MQ2') {
-            s.value = 185.0;
-            s.isAnomaly = true;
-          }
-          if (s.type === 'TEMP_BME688') {
-            s.value = 49.5;
-            s.isAnomaly = true;
-          }
-          if (s.type === 'FLAME_IR') {
-            s.value = 1.0;
-            s.isAnomaly = true;
-          }
-        });
-        fireNode1.state = 'WATCH';
-        fireNode1.localHazardConfidence = 0.74;
-        fireNode1.isReSensing = true;
-        fireNode1.samplingRateHz = 5.0;
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'FOREST FIRE DETECTED BY NODE 1: Forest Fire Node 1 (X: -16.0, Z: -12.0) detected smoke spike (185 ppm) and heat (49.5°C)',
-          fireNode1.id,
-          fireNode1.overallSensorTrustPct,
-          0.05,
-          0.74,
-          'WATCH',
-          'Smoke and thermal anomaly confirmed. Clarifying event with Forest Fire Node 2.'
-        );
-
-        // Step 1: Forest Fire Node 1 clarifies with Forest Fire Node 2
+      if (isFire) {
         this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', {
           event: 'FIRE_PRELIM',
           smoke_ppm: 185.0,
           temp_c: 49.5
         });
-
-        // Step 2: Forest Fire Node 2 clarifies and corroborates
-        setTimeout(() => {
-          if (fireNode2 && this.activeHazard?.type === 'FOREST_FIRE') {
-            fireNode2.sensors.forEach(s => {
-              if (s.type === 'FLAME_IR') {
-                s.value = 1.0;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'TEMP_BME688') {
-                s.value = 52.0;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'SMOKE_MQ2') {
-                s.value = 145.0;
-                s.isAnomaly = true;
-              }
-            });
-            fireNode2.isCorroborating = true;
-            fireNode2.state = 'WARNING';
-            fireNode2.localHazardConfidence = 0.91;
-
-            this.addLedgerEntry(
-              'NEIGHBOUR_RESPONSE',
-              'FOREST FIRE CORROBORATION: Forest Fire Node 2 (X: -41.6, Z: -38.8) confirmed optical IR flame and 52.0°C combustion',
-              fireNode2.id,
-              fireNode2.overallSensorTrustPct,
-              0.74,
-              0.95,
-              'CRITICAL',
-              'Dual-node optical flame & smoke convergence. Transferring verified disaster packets to Superior Node at Watch Tower.'
-            );
-
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_FLAME_ACTIVE',
-              flame_ir: 1.0,
-              temp_c: 52.0
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FIRE_VERIFIED',
-              smoke_ppm: 185.0,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'FIRE_CORROBORATION',
-              flame_ir: 1.0,
-              temp_c: 52.0
-            });
-          }
-        }, 700);
       }
-    } else if (this.activeHazard.type === 'LANDSLIDE') {
-      // 1. Landslide Node 1 (X: -35.7, Z: 41.7) detects slope shear & geophone tremor first
-      const lsNode1 = this.getNode('NODE-3'); // Landslide Node 1
-      const lsNode2 = this.getNode('NODE-LANDSLIDE-2'); // Landslide Node 2 at [X: -9.0, Z: 34.7]
-      if (lsNode1) {
-        lsNode1.sensors.forEach(s => {
-          if (s.type === 'VIBRATION_GEOPHONE') {
-            s.value = 1.48; // Critical ground shock & sliding tremor
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'HUMIDITY_DHT') {
-            s.value = 94.0; // Critical soil pore-water saturation
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'RAINFALL_OPTICAL') {
-            s.value = 52.0; // Heavy antecedent mountain downpour
-            s.isAnomaly = true;
-          }
-        });
-        lsNode1.state = 'WARNING';
-        lsNode1.localHazardConfidence = 0.92;
-        lsNode1.isReSensing = true;
-        lsNode1.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst for ground motion
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'LANDSLIDE DETECTED BY NODE 1: Landslide Node 1 (X: -35.7, Z: 41.7) detected slope failure (1.48 g) & soil saturation (94%)',
-          lsNode1.id,
-          lsNode1.overallSensorTrustPct,
-          0.04,
-          0.92,
-          'WARNING',
-          'High-frequency seismic tremor detected at bedrock boulders. Clarifying event with Landslide Node 2.'
-        );
-
-        // Step 1: Landslide Node 1 clarifies with Landslide Node 2
+      if (isLandslide) {
         this.dispatchLoRaPacket('NODE-3', 'NODE-LANDSLIDE-2', 'VERIFY_REQUEST', {
           event: 'LANDSLIDE_PRELIM',
           seismic_g: 1.48,
           soil_sat: 94.0
         });
-
-        // Step 2: Landslide Node 2 clarifies and corroborates
-        setTimeout(() => {
-          if (lsNode2 && this.activeHazard?.type === 'LANDSLIDE') {
-            lsNode2.sensors.forEach(s => {
-              if (s.type === 'VIBRATION_GEOPHONE') {
-                s.value = 0.95;
-                s.isAnomaly = true;
-              }
-              if (s.type === 'IMU_MPU6050') {
-                s.value = 11.4;
-                s.isAnomaly = true;
-              }
-            });
-            lsNode2.isCorroborating = true;
-            lsNode2.state = 'WARNING';
-            lsNode2.localHazardConfidence = 0.88;
-
-            this.addLedgerEntry(
-              'NEIGHBOUR_RESPONSE',
-              'LANDSLIDE CORROBORATION: Landslide Node 2 (X: -9.0, Z: 34.7) confirmed lower runout displacement (11.4° tilt, 0.95 g)',
-              lsNode2.id,
-              lsNode2.overallSensorTrustPct,
-              0.92,
-              0.95,
-              'CRITICAL',
-              'Dual-node slope slip confirmed. Transferring verified disaster packets to Superior Node at Watch Tower.'
-            );
-
-            // Clarification response sent back to Node 1
-            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-3', 'VERIFY_RESPONSE', {
-              status: 'CORROBORATED_RUNOUT_SLIP',
-              seismic_g: 0.95,
-              tilt_deg: 11.4
-            });
-
-            // Step 3: Packets transferred to Superior Node
-            this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'LANDSLIDE_VERIFIED',
-              seismic_g: 1.48,
-              corroborated: 1
-            });
-            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
-              event: 'LANDSLIDE_CORROBORATION',
-              seismic_g: 0.95,
-              tilt_deg: 11.4
-            });
-          }
-        }, 700);
       }
-    } else if (this.activeHazard.type === 'AIR_QUALITY_EVENT') {
-      const node2 = this.prototypeNodes.find(n => n.id === 'NODE-2');
-      if (node2) {
-        node2.sensors.forEach(s => {
-          if (s.type === 'SMOKE_MQ2') {
-            s.value = 245.0; // ppm: critical smoke threshold breached
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'GAS_MQ135') {
-            s.value = 275.0; // AQI: severe particulate air pollution
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'TEMP_BME688') {
-            s.value = 39.0;
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
+      if (isAirQuality && !isFire) {
+        this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', {
+          event: 'AIR_PLUME_CORROBORATE',
+          smoke_ppm: 245.0,
+          aqi: 275.0
         });
-        node2.state = 'WARNING';
-        node2.localHazardConfidence = 0.88;
-        node2.isReSensing = true;
-        node2.samplingRateHz = 5.0; // 5Hz Adaptive Re-sensing burst for smoke detection
+      }
+      if (isHeat) {
+        this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', {
+          event: 'THERMAL_CORROBORATE',
+          temp_c: 47.2
+        });
+      }
+      this.aggregatedHazardConfidence = 0.64;
+    });
 
+    // STEP 8: INDEPENDENT CORROBORATION (2600ms)
+    this.scheduleNarrativeStep(2600, 8, () => {
+      if (isFlood) {
+        const floodNode2 = this.getNode('NODE-1');
+        if (floodNode2) {
+          floodNode2.sensors.forEach(s => {
+            if (s.type === 'WATER_LEVEL_ULTRASONIC') {
+              s.value = 3.90;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'HUMIDITY_DHT') {
+              s.value = 95.0;
+              s.isAnomaly = true;
+            }
+          });
+          floodNode2.isCorroborating = true;
+          floodNode2.state = 'WARNING';
+          floodNode2.localHazardConfidence = 0.89;
+        }
+      }
+      if (isFire || isAirQuality) {
+        const fireNode2 = this.getNode('NODE-FIRE-2');
+        if (fireNode2) {
+          fireNode2.sensors.forEach(s => {
+            if (s.type === 'FLAME_IR') {
+              s.value = 1.0;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'TEMP_BME688') {
+              s.value = 52.0;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'SMOKE_MQ2') {
+              s.value = 145.0;
+              s.isAnomaly = true;
+            }
+          });
+          fireNode2.isCorroborating = true;
+          fireNode2.state = 'WARNING';
+          fireNode2.localHazardConfidence = 0.91;
+        }
+      }
+      if (isLandslide) {
+        const lsNode2 = this.getNode('NODE-LANDSLIDE-2');
+        if (lsNode2) {
+          lsNode2.sensors.forEach(s => {
+            if (s.type === 'VIBRATION_GEOPHONE') {
+              s.value = 0.95;
+              s.isAnomaly = true;
+            }
+            if (s.type === 'IMU_MPU6050') {
+              s.value = 11.4;
+              s.isAnomaly = true;
+            }
+          });
+          lsNode2.isCorroborating = true;
+          lsNode2.state = 'WARNING';
+          lsNode2.localHazardConfidence = 0.88;
+        }
+      }
+      if (isHeat) {
+        const node2 = this.getNode('NODE-2');
+        if (node2) {
+          node2.isCorroborating = true;
+          node2.state = 'WARNING';
+          node2.localHazardConfidence = 0.85;
+        }
+      }
+      this.aggregatedHazardConfidence = 0.72;
+    });
+
+    // STEP 9: LoRa VERIFY_RESPONSE (3050ms) — Braided Cyan Beam from Neighbour Node -> Primary Node
+    this.scheduleNarrativeStep(3050, 9, () => {
+      if (isFlood) {
+        this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', {
+          status: 'CORROBORATED_SURGE',
+          water_m: 3.90
+        });
         this.addLedgerEntry(
-          'ANOMALY',
-          'AIR POLLUTION SMOKE BREACH: Forest Fire Node 1 (245 ppm smoke, 275 AQI) detected dense particulate plume',
-          'NODE-2',
-          node2.overallSensorTrustPct,
-          0.05,
-          0.88,
-          'WARNING',
-          'Intake snorkel optical and electrochemical sensors actively detecting heavy smoke.'
+          'NEIGHBOUR_RESPONSE',
+          'INDEPENDENT CORROBORATION: Flood Node 2 (X: 7.2, Z: 32.2) confirmed downstream embankment surge (3.90m)',
+          'NODE-1',
+          95,
+          0.64,
+          0.78,
+          'WATCH',
+          'NARRATIVE: "ASK THE NEIGHBOUR" ↓ LoRa VERIFY_REQUEST ↓ INDEPENDENT CORROBORATION ↓ LoRa VERIFY_RESPONSE'
         );
+      }
+      if (isFire) {
+        this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
+          status: 'CORROBORATED_FLAME_ACTIVE',
+          flame_ir: 1.0,
+          temp_c: 52.0
+        });
+        this.addLedgerEntry(
+          'NEIGHBOUR_RESPONSE',
+          'INDEPENDENT CORROBORATION: Forest Fire Node 2 (X: -41.6, Z: -38.8) confirmed IR flame & 52.0°C combustion',
+          'NODE-FIRE-2',
+          95,
+          0.64,
+          0.79,
+          'WATCH',
+          'NARRATIVE: "ASK THE NEIGHBOUR" ↓ LoRa VERIFY_REQUEST ↓ INDEPENDENT CORROBORATION ↓ LoRa VERIFY_RESPONSE'
+        );
+      }
+      if (isLandslide) {
+        this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-3', 'VERIFY_RESPONSE', {
+          status: 'CORROBORATED_RUNOUT_SLIP',
+          seismic_g: 0.95,
+          tilt_deg: 11.4
+        });
+        this.addLedgerEntry(
+          'NEIGHBOUR_RESPONSE',
+          'INDEPENDENT CORROBORATION: Landslide Node 2 (X: -9.0, Z: 34.7) confirmed lower runout displacement (11.4° tilt)',
+          'NODE-LANDSLIDE-2',
+          95,
+          0.68,
+          0.80,
+          'WATCH',
+          'NARRATIVE: "ASK THE NEIGHBOUR" ↓ LoRa VERIFY_REQUEST ↓ INDEPENDENT CORROBORATION ↓ LoRa VERIFY_RESPONSE'
+        );
+      }
+      if (isAirQuality && !isFire) {
+        this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-2', 'VERIFY_RESPONSE', {
+          status: 'CORROBORATED_PLUME',
+          aqi: 275.0
+        });
+      }
+      if (isHeat) {
+        this.dispatchLoRaPacket('NODE-2', 'NODE-1', 'VERIFY_RESPONSE', {
+          status: 'CORROBORATED_HEAT_DOME',
+          temp_c: 46.8
+        });
+      }
+      this.aggregatedHazardConfidence = 0.78;
+    });
 
+    // STEP 10: SUPERIOR NODE (3500ms) — Braided Cyan Beams from Field Nodes -> Watch Tower 01 (NODE-SUPERIOR)
+    this.scheduleNarrativeStep(3500, 10, () => {
+      if (isFlood) {
+        this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'FLOOD_VERIFIED',
+          water_m: 4.85,
+          corroborated: 1
+        });
+        this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'FLOOD_CORROBORATION',
+          water_m: 3.90
+        });
+      }
+      if (isFire) {
+        this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'FIRE_VERIFIED',
+          smoke_ppm: 185.0,
+          corroborated: 1
+        });
+        this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'FIRE_CORROBORATION',
+          flame_ir: 1.0,
+          temp_c: 52.0
+        });
+      }
+      if (isLandslide) {
+        this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'LANDSLIDE_VERIFIED',
+          seismic_g: 1.48,
+          corroborated: 1
+        });
+        this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
+          event: 'LANDSLIDE_CORROBORATION',
+          seismic_g: 0.95,
+          tilt_deg: 11.4
+        });
+      }
+      if (isAirQuality) {
         this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', {
           event: 'AIR_POLLUTION_SMOKE',
           smoke_ppm: 245.0,
           aqi: 275.0
         });
+        const nodeSuperior = this.getNode('NODE-SUPERIOR');
+        if (nodeSuperior) {
+          nodeSuperior.sensors.forEach(s => {
+            if (s.type === 'AIR_QUALITY_SPS30') {
+              s.value = 168.0;
+              s.isAnomaly = true;
+              s.reSensingActive = true;
+            }
+            if (s.type === 'GAS_MQ135') {
+              s.value = 285.0;
+              s.isAnomaly = true;
+              s.reSensingActive = true;
+            }
+          });
+          nodeSuperior.state = 'WARNING';
+          nodeSuperior.localHazardConfidence = 0.92;
+          nodeSuperior.isReSensing = true;
+          nodeSuperior.samplingRateHz = 5.0;
+        }
       }
-
-      // Superior Node at Watch Tower detects elevated air pollution
-      const nodeSuperior = this.prototypeNodes.find(n => n.id === 'NODE-SUPERIOR');
-      if (nodeSuperior) {
-        nodeSuperior.sensors.forEach(s => {
-          if (s.type === 'AIR_QUALITY_SPS30') {
-            s.value = 168.0; // µg/m³: critical air quality particulate breach
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'GAS_MQ135') {
-            s.value = 285.0; // AQI: severe particulate air pollution
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-        });
-        nodeSuperior.state = 'WARNING';
-        nodeSuperior.localHazardConfidence = 0.92;
-        nodeSuperior.isReSensing = true;
-        nodeSuperior.samplingRateHz = 5.0;
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'SUPERIOR NODE AIR QUALITY DETECTION: SPS30 Laser Sensor (168 µg/m³) & MQ-135 (285 AQI) detected severe chemical air pollution',
-          'NODE-SUPERIOR',
-          nodeSuperior.overallSensorTrustPct,
-          0.02,
-          0.92,
-          'WARNING',
-          'Superior Node at Watch Tower corroborates dense toxic plume. Quad-horn village evacuation siren activated!'
-        );
-
-        this.dispatchLoRaPacket('NODE-SUPERIOR', 'LOCAL_COMPUTER', 'EVENT_ALERT', {
-          event: 'AIR_QUALITY_BREACH',
-          sps30_pm25: 168.0,
-          gas_aqi: 285.0,
-          siren_state: 'ACTIVE'
-        });
-      }
-    } else if (this.activeHazard.type === 'EXTREME_HEAT') {
-      const node1 = this.getNode('NODE-1');
-      if (node1) {
-        node1.sensors.forEach(s => {
-          if (s.type === 'TEMP_BME688') {
-            s.value = 47.2;
-            s.isAnomaly = true;
-            s.reSensingActive = true;
-          }
-          if (s.type === 'HUMIDITY_DHT') {
-            s.value = 13.0;
-            s.isAnomaly = true;
-          }
-        });
-        node1.state = 'WARNING';
-        node1.localHazardConfidence = 0.89;
-        node1.isReSensing = true;
-        node1.samplingRateHz = 5.0;
-
-        this.addLedgerEntry(
-          'ANOMALY',
-          'EXTREME HEAT DOME BREACH: BME688 (47.2°C) & Humidity (13%) detected severe heat inversion',
-          'NODE-1',
-          node1.overallSensorTrustPct,
-          0.04,
-          0.89,
-          'WARNING',
-          'Valley basin trapped air mass exceeding physiological safety thresholds.'
-        );
-
+      if (isHeat) {
         this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', {
           event: 'HEAT_STRESS_ANOMALY',
           temp_c: 47.2,
           humidity_pct: 13.0
         });
       }
-    }
+      this.aggregatedHazardConfidence = 0.84;
+    });
 
-    setTimeout(() => {
+    // STEP 11: EVIDENCE FUSION (3950ms)
+    this.scheduleNarrativeStep(3950, 11, () => {
       this.recomputeEvidenceFusion();
-    }, 1500);
+    });
+
+    // STEP 12: CONFIDENCE > ALERT THRESHOLD (4350ms)
+    this.scheduleNarrativeStep(4350, 12, () => {
+      this.aggregatedHazardConfidence = Math.max(this.aggregatedHazardConfidence, 0.92);
+      this.recordConfidencePoint('Confidence > Alert Threshold');
+    });
+
+    // STEP 13: WARNING (4750ms)
+    this.scheduleNarrativeStep(4750, 13, () => {
+      if (this.systemState === 'NORMAL' || this.systemState === 'WATCH') {
+        this.systemState = 'WARNING';
+      }
+      this.addLedgerEntry(
+        'DECISION',
+        `WARNING ESCALATION: Multi-node evidence fusion crossed alert threshold (${(this.aggregatedHazardConfidence * 100).toFixed(0)}%)`,
+        'NODE-SUPERIOR',
+        99,
+        0.78,
+        this.aggregatedHazardConfidence,
+        this.systemState,
+        'NARRATIVE: SUPERIOR NODE ↓ EVIDENCE FUSION ↓ CONFIDENCE > ALERT THRESHOLD ↓ WARNING'
+      );
+    });
+
+    // STEP 14: BUZZER / SIREN (5150ms)
+    this.scheduleNarrativeStep(5150, 14, () => {
+      soundManager.playCriticalSiren();
+      this.triggerWatchtowerAlarm(true, 'SIREN');
+      this.addLog(
+        'FUSION',
+        'WATCH TOWER 01: BUZZER / SIREN ACTIVATED (120 dB SPL)',
+        'Superior Node validated multi-node evidence & activated the 120dB quad-horn village emergency buzzer / siren.',
+        'critical',
+        'NODE-SUPERIOR'
+      );
+    });
+
+    // STEP 15: WAN FAILURE (5650ms)
+    this.scheduleNarrativeStep(5650, 15, () => {
+      this.isInternetOnline = false;
+      this.addLog(
+        'SYSTEM',
+        'WAN FAILURE: External Cloud Backhaul Severed',
+        'Cloud internet link lost during disaster! Transitioning to 100% autonomous local LoRa edge operation.',
+        'warning'
+      );
+    });
+
+    // STEP 16: LOCAL EDGE OPERATION CONTINUES (6150ms)
+    this.scheduleNarrativeStep(6150, 16, () => {
+      this.addLedgerEntry(
+        'DECISION',
+        'LOCAL EDGE OPERATION CONTINUES: SX1262 LoRa mesh & Watch Tower Superior Node operating 100% autonomously despite WAN failure',
+        'NODE-SUPERIOR',
+        99,
+        this.aggregatedHazardConfidence,
+        this.aggregatedHazardConfidence,
+        this.systemState,
+        'NARRATIVE: WARNING ↓ BUZZER / SIREN ↓ WAN FAILURE ↓ LOCAL EDGE OPERATION CONTINUES'
+      );
+    });
   }
 
   // ==========================================
@@ -1643,6 +1844,19 @@ export class SimulationEngine {
     const previousConfidence = this.aggregatedHazardConfidence;
     this.aggregatedHazardConfidence = Math.min(1.0, Math.max(0.04, totalScore));
 
+    // Dispatch Evidence Fusion beams from all contributing field nodes strictly to NODE-SUPERIOR (Watch Tower 01)
+    if (this.currentNarrativeStepIndex >= 10) {
+      const contributingNodeIds = Array.from(new Set(items.map(i => i.nodeId)));
+      contributingNodeIds.forEach(nid => {
+        if (nid !== 'NODE-SUPERIOR') {
+          this.dispatchLoRaPacket(nid, 'NODE-SUPERIOR', 'EVENT_ALERT', {
+            fusion_conf: Number(this.aggregatedHazardConfidence.toFixed(2)),
+            evidence_items: items.filter(i => i.nodeId === nid).length
+          }, true);
+        }
+      });
+    }
+
     // Determine state
     let nextState: SystemState = 'NORMAL';
     if (this.aggregatedHazardConfidence >= 0.85) {
@@ -1654,20 +1868,13 @@ export class SimulationEngine {
     }
 
     if (nextState !== this.systemState) {
-      const prevState = this.systemState;
       this.systemState = nextState;
 
       if (nextState === 'WARNING' || nextState === 'CRITICAL') {
-        soundManager.playCriticalSiren();
-        // ESP32 Superior Node at Watch Tower validates evidence & activates loud emergency siren
-        this.triggerWatchtowerAlarm(true, 'SIREN');
-        this.addLog(
-          'FUSION',
-          'WATCH TOWER 01: ESP32 Superior Node Validated Disaster Event',
-          `Evidence convergence crossed ${nextState} threshold (${(this.aggregatedHazardConfidence * 100).toFixed(0)}%). Loud red buzzer & village warning siren activated!`,
-          'critical',
-          'NODE-SUPERIOR'
-        );
+        if (this.currentNarrativeStepIndex >= 14) {
+          soundManager.playCriticalSiren();
+          this.triggerWatchtowerAlarm(true, 'SIREN');
+        }
       } else if (nextState === 'WATCH') {
         soundManager.playWatchPing();
       } else if (nextState === 'NORMAL') {
@@ -1697,21 +1904,40 @@ export class SimulationEngine {
     source: NodeId | 'LOCAL_COMPUTER',
     dest: NodeId | 'LOCAL_COMPUTER' | 'BROADCAST',
     type: LoRaPacket['messageType'],
-    measurements: Record<string, string | number>
+    measurements: Record<string, string | number>,
+    silentRefresh: boolean = false
   ) {
-    this.packetSeqCounter++;
-    const pktId = `PKT-${this.packetSeqCounter}`;
+    // Never dispatch a 3D beam to or from LOCAL_COMPUTER (which has no 3D sensor node mesh)
+    if (source === 'LOCAL_COMPUTER' || dest === 'LOCAL_COMPUTER' || dest === 'BROADCAST') {
+      return;
+    }
 
     const srcNode = this.getNode(source);
     const dstNode = this.getNode(dest);
-    let startPos: [number, number, number] = [0, 2, 0];
-    let endPos: [number, number, number] = [0, 2, 0];
+    if (!srcNode || !dstNode) return;
+    if (srcNode.loraStatus === 'DISCONNECTED') return;
 
-    if (srcNode) startPos = [...srcNode.position];
-    else if (source === 'LOCAL_COMPUTER') startPos = [0, 2.4, 0];
+    // If a beam already exists between these two nodes, keep it alive smoothly without duplicate stacking
+    const existing = this.activePackets.find(
+      p => (p.sourceNodeId === source && p.destinationNodeId === dest) ||
+           (silentRefresh && p.sourceNodeId === dest && p.destinationNodeId === source)
+    );
+    if (existing) {
+      existing.progress = Math.min(existing.progress || 0.22, 0.22);
+      existing.messageType = type;
+      existing.measurementSummary = measurements;
+      existing.timestamp = Date.now();
+      if (!silentRefresh) {
+        this.notify();
+      }
+      return;
+    }
 
-    if (dstNode) endPos = [...dstNode.position];
-    else if (dest === 'LOCAL_COMPUTER') endPos = [0, 2.4, 0];
+    this.packetSeqCounter++;
+    const pktId = `PKT-${this.packetSeqCounter}`;
+
+    const startPos: [number, number, number] = [...srcNode.position];
+    const endPos: [number, number, number] = [...dstNode.position];
 
     const pkt: LoRaPacket = {
       id: pktId,
@@ -1720,7 +1946,7 @@ export class SimulationEngine {
       messageType: type,
       timestamp: Date.now(),
       sequenceNumber: this.packetSeqCounter,
-      sensorTrustPct: srcNode ? srcNode.overallSensorTrustPct : 95,
+      sensorTrustPct: srcNode.overallSensorTrustPct,
       hazardConfidence: this.aggregatedHazardConfidence,
       sensorHealth: 'GOOD',
       measurementSummary: measurements,
@@ -1735,18 +1961,19 @@ export class SimulationEngine {
     };
 
     this.activePackets.push(pkt);
-    soundManager.playRadioChirp();
 
-    this.addLog(
-      'LORA',
-      `LoRa ${type}: ${source} → ${dest}`,
-      `Payload: ${JSON.stringify(measurements)} | RSSI: ${pkt.rssi} dBm`,
-      'info',
-      source === 'LOCAL_COMPUTER' ? undefined : (source as NodeId),
-      pktId
-    );
-
-    this.notify();
+    if (!silentRefresh) {
+      soundManager.playRadioChirp();
+      this.addLog(
+        'LORA',
+        `LoRa ${type}: ${source} → ${dest}`,
+        `Payload: ${JSON.stringify(measurements)} | RSSI: ${pkt.rssi} dBm`,
+        'info',
+        source as NodeId,
+        pktId
+      );
+      this.notify();
+    }
   }
 
   // ==========================================
@@ -1832,6 +2059,8 @@ export class SimulationEngine {
   // ==========================================
   // RUNTIME TICK (Animation, Packets, Demo)
   // ==========================================
+  private beamSustainerTimer: number = 0;
+
   public tick(dt: number) {
     if (this.isPaused) return;
 
@@ -1840,13 +2069,82 @@ export class SimulationEngine {
       this.watchtowerSoundwaveProgress = (this.watchtowerSoundwaveProgress + dt * 0.45) % 1.0;
     }
 
-    // Advance active LoRa packets
+    // Advance active LoRa communication & fusion beams
     for (let i = this.activePackets.length - 1; i >= 0; i--) {
       const pkt = this.activePackets[i];
-      pkt.progress = (pkt.progress || 0) + dt * 0.95;
+      pkt.progress = (pkt.progress || 0) + dt * 0.28;
       if (pkt.progress >= 1.0) {
-        soundManager.playPacketAck();
         this.activePackets.splice(i, 1);
+      }
+    }
+
+    // Sustain active peer corroboration (Step >= 7) and Superior Node evidence fusion (Step >= 10) beams during active hazards
+    this.beamSustainerTimer += dt;
+    if (this.beamSustainerTimer >= 0.85) {
+      this.beamSustainerTimer = 0;
+      const hType = this.activeHazard?.type;
+
+      if (hType) {
+        const allowPeerBeams = this.currentNarrativeStepIndex >= 7;
+        const allowSuperiorBeams = this.currentNarrativeStepIndex >= 10;
+
+        if (hType === 'FLOOD' || hType === 'EXTREME_RAIN' || hType === 'MULTI_HAZARD') {
+          if (allowPeerBeams) {
+            this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', { event: 'FLOOD_CORROBORATE', water_m: 4.85 }, true);
+          }
+          if (allowSuperiorBeams) {
+            this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'FLOOD_EVIDENCE_FUSION', water_m: 4.85 }, true);
+            this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'FLOOD_EVIDENCE_FUSION', water_m: 3.90 }, true);
+          }
+        }
+        if (hType === 'FOREST_FIRE' || hType === 'MULTI_HAZARD') {
+          if (allowPeerBeams) {
+            this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', { event: 'FIRE_CORROBORATE', smoke_ppm: 185.0 }, true);
+          }
+          if (allowSuperiorBeams) {
+            this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'FIRE_EVIDENCE_FUSION', smoke_ppm: 185.0 }, true);
+            this.dispatchLoRaPacket('NODE-FIRE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'FIRE_EVIDENCE_FUSION', temp_c: 52.0 }, true);
+          }
+        }
+        if (hType === 'LANDSLIDE' || hType === 'MULTI_HAZARD') {
+          if (allowPeerBeams) {
+            this.dispatchLoRaPacket('NODE-3', 'NODE-LANDSLIDE-2', 'VERIFY_REQUEST', { event: 'SLOPE_CORROBORATE', seismic_g: 1.48 }, true);
+          }
+          if (allowSuperiorBeams) {
+            this.dispatchLoRaPacket('NODE-3', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'SLOPE_EVIDENCE_FUSION', seismic_g: 1.48 }, true);
+            this.dispatchLoRaPacket('NODE-LANDSLIDE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'SLOPE_EVIDENCE_FUSION', tilt_deg: 11.4 }, true);
+          }
+        }
+        if (hType === 'AIR_QUALITY_EVENT') {
+          if (allowPeerBeams) {
+            this.dispatchLoRaPacket('NODE-2', 'NODE-FIRE-2', 'VERIFY_REQUEST', { event: 'PLUME_CORROBORATE', aqi: 275.0 }, true);
+          }
+          if (allowSuperiorBeams) {
+            this.dispatchLoRaPacket('NODE-2', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'AQI_EVIDENCE_FUSION', smoke_ppm: 245.0 }, true);
+          }
+        }
+        if (hType === 'EXTREME_HEAT') {
+          if (allowPeerBeams) {
+            this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', { event: 'THERMAL_CORROBORATE', temp_c: 47.2 }, true);
+          }
+          if (allowSuperiorBeams) {
+            this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { event: 'HEAT_EVIDENCE_FUSION', temp_c: 47.2 }, true);
+          }
+        }
+      } else if (this.isFalseAlarmScenarioActive) {
+        this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', { type: 'WATER_SPIKE_CHECK', val: 4.8 }, true);
+        this.dispatchLoRaPacket('NODE-2', 'NODE-1', 'VERIFY_RESPONSE', { status: 'CLEAR_WEATHER_REJECT' }, true);
+      } else if (this.isDemoRunning) {
+        const step = JUDGE_DEMO_STEPS[this.currentDemoStepIndex];
+        if (step && step.stepIndex === 4) {
+          this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', { type: 'WATER_SURGE', val_m: 4.85 }, true);
+        } else if (step && step.stepIndex === 5) {
+          this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', { status: 'CORROBORATED_SURGE', rain_mm: 68 }, true);
+        } else if (step && (step.stepIndex === 6 || step.stepIndex === 7 || step.stepIndex === 8 || step.stepIndex === 9)) {
+          this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_RESPONSE', { status: 'CORROBORATED_SURGE' }, true);
+          this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { conf: 0.94, state: 'CRITICAL' }, true);
+          this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { conf: 0.94, state: 'CRITICAL' }, true);
+        }
       }
     }
   }
@@ -1942,35 +2240,54 @@ export class SimulationEngine {
       this.isRiskHeatmapActive = false;
     }
 
+    // Synchronize 17-step narrative index with the 9 Judge Demo steps
+    const stepToNarrativeMap: Record<number, number> = {
+      1: 1,  // NORMAL -> RAIN / ENVIRONMENTAL CHANGE
+      2: 3,  // ANOMALY DETECTED -> "IS THIS REAL?"
+      3: 5,  // RE-SENSE -> PERSISTENT EVIDENCE
+      4: 7,  // "ASK THE NEIGHBOUR" -> LoRa VERIFY_REQUEST
+      5: 9,  // INDEPENDENT CORROBORATION -> LoRa VERIFY_RESPONSE
+      6: 11, // SUPERIOR NODE -> EVIDENCE FUSION
+      7: 14, // CONFIDENCE > ALERT THRESHOLD -> WARNING -> BUZZER / SIREN
+      8: 15, // WAN FAILURE -> LOCAL EDGE OPERATION CONTINUES
+      9: 16  // LOCAL EDGE OPERATION CONTINUES
+    };
+    this.setNarrativeStep(stepToNarrativeMap[step.stepIndex] ?? 0);
+
     // Trigger step-specific packet transmissions and alerts
-    if (step.stepIndex === 3) {
-      const node1 = this.prototypeNodes.find(n => n.id === 'NODE-1');
-      if (node1) {
-        node1.sensors[0].value = 3.45;
-        node1.sensors[0].isAnomaly = true;
-        node1.state = 'WATCH';
+    if (step.stepIndex === 2) {
+      const floodNode1 = this.getNode('NODE-FLOOD-1');
+      if (floodNode1) {
+        floodNode1.sensors[0].value = 4.85;
+        floodNode1.sensors[0].isAnomaly = true;
+        floodNode1.state = 'WATCH';
       }
       soundManager.playWatchPing();
-    } else if (step.stepIndex === 4) {
-      const node1 = this.prototypeNodes.find(n => n.id === 'NODE-1');
-      if (node1) {
-        node1.isReSensing = true;
-        node1.samplingRateHz = 5.0;
-        node1.sensors[0].value = 3.62;
+    } else if (step.stepIndex === 3) {
+      const floodNode1 = this.getNode('NODE-FLOOD-1');
+      if (floodNode1) {
+        floodNode1.isReSensing = true;
+        floodNode1.samplingRateHz = 5.0;
       }
+    } else if (step.stepIndex === 4) {
+      this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-1', 'VERIFY_REQUEST', { type: 'WATER_SURGE', val_m: 4.85 });
     } else if (step.stepIndex === 5) {
-      this.dispatchLoRaPacket('NODE-1', 'NODE-2', 'VERIFY_REQUEST', { type: 'WATER_SURGE', val_m: 3.62 });
-      setTimeout(() => {
-        this.dispatchLoRaPacket('NODE-2', 'NODE-1', 'VERIFY_RESPONSE', { status: 'CONFIRMED_RAIN_SURGE', rain_mm: 68 });
-      }, 2500);
+      const node1 = this.getNode('NODE-1');
+      if (node1) {
+        node1.isCorroborating = true;
+        node1.state = 'WARNING';
+      }
+      this.dispatchLoRaPacket('NODE-1', 'NODE-FLOOD-1', 'VERIFY_RESPONSE', { status: 'CONFIRMED_RAIN_SURGE', rain_mm: 68 });
     } else if (step.stepIndex === 6) {
-      this.dispatchLoRaPacket('NODE-1', 'LOCAL_COMPUTER', 'EVENT_ALERT', { conf: 0.82, state: 'WARNING' });
+      this.dispatchLoRaPacket('NODE-FLOOD-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { conf: 0.88, state: 'WARNING' });
+      this.dispatchLoRaPacket('NODE-1', 'NODE-SUPERIOR', 'EVENT_ALERT', { conf: 0.88, state: 'WARNING' });
     } else if (step.stepIndex === 7) {
       soundManager.playCriticalSiren();
+      this.triggerWatchtowerAlarm(true, 'SIREN');
     } else if (step.stepIndex === 8) {
       this.isInternetOnline = false;
     } else if (step.stepIndex === 9) {
-      this.isInternetOnline = true;
+      this.isInternetOnline = false;
     }
 
     this.addLog('SYSTEM', `Demo Step ${step.stepIndex}: ${step.title}`, step.description, 'info');

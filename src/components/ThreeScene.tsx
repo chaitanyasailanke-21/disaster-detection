@@ -3875,43 +3875,43 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
 
     // Outer frosted container
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.90)';
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.96)';
     ctx.beginPath();
     ctx.roundRect(8, 8, canvas.width - 16, canvas.height - 16, 18);
     ctx.fill();
 
     // Glowing border
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = borderColor;
     ctx.stroke();
 
     // Title: e.g. "FLOOD NODE 2"
-    ctx.font = 'bold 30px "Chakra Petch", sans-serif';
+    ctx.font = '900 34px "Chakra Petch", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(title, 24, 48);
 
     // Minimal details: e.g. "EMBANKMENT LEVEL · TOP NODE #2"
-    ctx.font = '600 16px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 18px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#f1f5f9';
     ctx.fillText(subtitle, 24, 80);
 
     // Status pill
     ctx.fillStyle = tagBg;
     ctx.beginPath();
-    ctx.roundRect(24, 98, 230, 36, 10);
+    ctx.roundRect(24, 98, 240, 36, 10);
     ctx.fill();
-    ctx.font = 'bold 15px "JetBrains Mono", monospace';
+    ctx.font = '900 17px "JetBrains Mono", monospace';
     ctx.fillStyle = tagFg;
-    ctx.fillText(badgeTag, 36, 121);
+    ctx.fillText(badgeTag, 36, 122);
 
     // Microchip hardware tag
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
     ctx.beginPath();
     ctx.roundRect(canvas.width - 188, 98, 164, 36, 10);
     ctx.fill();
-    ctx.font = '600 15px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('ESP32-S3 LoRa', canvas.width - 176, 121);
+    ctx.font = 'bold 16px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('ESP32-S3 LoRa', canvas.width - 176, 122);
   }
 
   function buildPrototypeFieldNodes(scene: THREE.Scene) {
@@ -6892,7 +6892,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       });
     }
 
-    // 7. ANIMATE IN-FLIGHT LORA PACKETS
+    // 7. ANIMATE IN-FLIGHT LORA COMMUNICATION & EVIDENCE FUSION ENERGY BEAMS
     const activePackets: LoRaPacket[] = simulationEngine.activePackets;
     const currentPktIds = new Set(activePackets.map((p: LoRaPacket) => p.id));
 
@@ -6903,43 +6903,284 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     });
 
+    const resolveBeamNodeAnchor = (nodeId: string): THREE.Vector3 | null => {
+      if (nodeId === 'LOCAL_COMPUTER' || nodeId === 'BROADCAST') {
+        return null;
+      }
+      if (nodeId === 'NODE-SUPERIOR') {
+        const gy = getMountainTerrainElevation(42.5, 2.5);
+        return new THREE.Vector3(42.5, gy + 14.6, 2.5);
+      }
+      const marker = nodeMarkersRef.current.get(nodeId);
+      if (marker) {
+        return new THREE.Vector3(marker.position.x, marker.position.y + 1.52, marker.position.z);
+      }
+      return null;
+    };
+
+    const STRAND_COUNT = 6;
+    const STRAND_SEGS = 44;
+    const STRAND_SIDES = 5;
+
     activePackets.forEach((p: LoRaPacket) => {
+      const start = resolveBeamNodeAnchor(p.sourceNodeId);
+      const end = resolveBeamNodeAnchor(p.destinationNodeId);
+      if (!start || !end) {
+        const stale = packetMeshesRef.current.get(p.id);
+        if (stale) {
+          scene.remove(stale);
+          packetMeshesRef.current.delete(p.id);
+        }
+        return;
+      }
+
       let pGroup = packetMeshesRef.current.get(p.id);
       if (!pGroup) {
         pGroup = new THREE.Group();
         pGroup.userData = { packet: p };
 
-        const sphereMat = new THREE.MeshBasicMaterial({
-          color: p.messageType === 'VERIFY_REQUEST' ? 0xa855f7 : p.messageType === 'VERIFY_RESPONSE' ? 0x10b981 : 0x0284c7
-        });
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), sphereMat);
-        pGroup.add(sphere);
-
-        const waveGeo = new THREE.RingGeometry(0.38, 0.58, 16);
-        const waveMat = new THREE.MeshBasicMaterial({
-          color: sphereMat.color,
+        // 1. Central Brilliant White-Cyan Core Cylinder (unit Z length 0 -> 1)
+        const coreGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.0, 10, 1, true);
+        coreGeo.rotateX(Math.PI / 2);
+        coreGeo.translate(0, 0, 0.5);
+        const coreMat = new THREE.MeshBasicMaterial({
+          color: 0xe0f2fe,
           transparent: true,
-          opacity: 0.75,
+          opacity: 0.96,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
           side: THREE.DoubleSide
         });
-        const wave = new THREE.Mesh(waveGeo, waveMat);
-        pGroup.add(wave);
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        coreMesh.name = 'beamCore';
+        pGroup.add(coreMesh);
+
+        // 2. Inner Electric-Cyan Glow Sheath
+        const innerGlowGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.0, 10, 1, true);
+        innerGlowGeo.rotateX(Math.PI / 2);
+        innerGlowGeo.translate(0, 0, 0.5);
+        const innerGlowMat = new THREE.MeshBasicMaterial({
+          color: 0x22d3ee,
+          transparent: true,
+          opacity: 0.52,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const innerGlowMesh = new THREE.Mesh(innerGlowGeo, innerGlowMat);
+        innerGlowMesh.name = 'beamInnerGlow';
+        pGroup.add(innerGlowMesh);
+
+        // 3. Wide Volumetric Cyan Aura Sheath
+        const outerAuraGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.0, 10, 1, true);
+        outerAuraGeo.rotateX(Math.PI / 2);
+        outerAuraGeo.translate(0, 0, 0.5);
+        const outerAuraMat = new THREE.MeshBasicMaterial({
+          color: 0x0284c7,
+          transparent: true,
+          opacity: 0.28,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const outerAuraMesh = new THREE.Mesh(outerAuraGeo, outerAuraMat);
+        outerAuraMesh.name = 'beamOuterAura';
+        pGroup.add(outerAuraMesh);
+
+        // 4. 6 Intertwined Volumetric Braided / Helical Plasma Strands
+        const strandsGroup = new THREE.Group();
+        strandsGroup.name = 'beamStrandsGroup';
+        for (let s = 0; s < STRAND_COUNT; s++) {
+          const vertCount = (STRAND_SEGS + 1) * STRAND_SIDES;
+          const sGeo = new THREE.BufferGeometry();
+          const sPos = new Float32Array(vertCount * 3);
+          const sIndices: number[] = [];
+
+          for (let i = 0; i < STRAND_SEGS; i++) {
+            const ringA = i * STRAND_SIDES;
+            const ringB = (i + 1) * STRAND_SIDES;
+            for (let k = 0; k < STRAND_SIDES; k++) {
+              const nextK = (k + 1) % STRAND_SIDES;
+              const a = ringA + k;
+              const b = ringA + nextK;
+              const c = ringB + k;
+              const d = ringB + nextK;
+              sIndices.push(a, c, b);
+              sIndices.push(b, c, d);
+            }
+          }
+
+          sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+          sGeo.setIndex(sIndices);
+
+          const isPrimaryStrand = s % 2 === 0;
+          const sMat = new THREE.MeshBasicMaterial({
+            color: isPrimaryStrand ? 0xe0f2fe : 0x38bdf8,
+            transparent: true,
+            opacity: isPrimaryStrand ? 0.92 : 0.80,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          });
+
+          const sMesh = new THREE.Mesh(sGeo, sMat);
+          strandsGroup.add(sMesh);
+        }
+        pGroup.add(strandsGroup);
+
+        // 5. Source Emitter Flare & Target Receiver Impact Halo
+        const flareMat = new THREE.MeshBasicMaterial({
+          color: 0xe0f2fe,
+          transparent: true,
+          opacity: 0.92,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const haloMat = new THREE.MeshBasicMaterial({
+          color: 0x22d3ee,
+          transparent: true,
+          opacity: 0.78,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+
+        const srcFlare = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), flareMat);
+        srcFlare.name = 'beamSrcFlare';
+        pGroup.add(srcFlare);
+
+        const srcHalo = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.62, 20), haloMat);
+        srcHalo.name = 'beamSrcHalo';
+        pGroup.add(srcHalo);
+
+        const dstFlare = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), flareMat);
+        dstFlare.name = 'beamDstFlare';
+        pGroup.add(dstFlare);
+
+        const dstHalo = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.72, 20), haloMat);
+        dstHalo.name = 'beamDstHalo';
+        pGroup.add(dstHalo);
+
+        // 6. 3 Travelling Energy Surge Bolts along the beam (indicating direction Source -> Target)
+        const pulsesGroup = new THREE.Group();
+        pulsesGroup.name = 'beamPulsesGroup';
+        const boltGeo = new THREE.SphereGeometry(0.17, 10, 10);
+        boltGeo.scale(1.0, 1.0, 3.4);
+        for (let b = 0; b < 3; b++) {
+          const bolt = new THREE.Mesh(boltGeo, flareMat);
+          pulsesGroup.add(bolt);
+        }
+        pGroup.add(pulsesGroup);
 
         scene.add(pGroup);
         packetMeshesRef.current.set(p.id, pGroup);
       }
 
-      const start = p.startPos ? new THREE.Vector3(p.startPos[0], p.startPos[1], p.startPos[2]) : new THREE.Vector3(0, 0, 0);
-      const end = p.endPos ? new THREE.Vector3(p.endPos[0], p.endPos[1], p.endPos[2]) : new THREE.Vector3(LOCAL_COMPUTER_POSITION[0], LOCAL_COMPUTER_POSITION[1], LOCAL_COMPUTER_POSITION[2]).add(new THREE.Vector3(0.9, 4.0, 0.1));
-      const t = Math.min(1.0, Math.max(0.0, p.progress || 0));
+      pGroup.userData.packet = p;
 
-      const x = THREE.MathUtils.lerp(start.x, end.x, t);
-      const z = THREE.MathUtils.lerp(start.z, end.z, t);
-      const y = Math.sin(t * Math.PI) * 4.6 + THREE.MathUtils.lerp(start.y + 1.8, end.y + 2.0, t);
+      const beamVec = new THREE.Vector3().subVectors(end, start);
+      const fullLen = Math.max(0.5, beamVec.length());
+      const beamDir = beamVec.clone().normalize();
 
-      pGroup.position.set(x, y, z);
-      pGroup.rotation.y = time * 4;
-      pGroup.rotation.x = time * 2;
+      const progress = Math.min(1.0, Math.max(0.0, p.progress || 0));
+      // Rapid initial beam extension (0 -> 0.16), then locked full span between nodes
+      const reachT = Math.min(1.0, progress / 0.16);
+      const easeReach = 1.0 - Math.pow(1.0 - reachT, 2.5);
+      const activeLen = Math.max(0.2, fullLen * easeReach);
+
+      // Smooth fade at the very end of lifecycle if not refreshed
+      const fadeAlpha = progress > 0.88 ? Math.max(0.0, (1.0 - progress) / 0.12) : 1.0;
+      const pulseThrob = 0.88 + 0.12 * Math.sin(time * 16.0);
+
+      pGroup.position.copy(start);
+      pGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), beamDir);
+
+      // Update core & glow cylinders
+      const coreMesh = pGroup.getObjectByName('beamCore') as THREE.Mesh | undefined;
+      if (coreMesh) {
+        coreMesh.scale.set(pulseThrob, pulseThrob, activeLen);
+        (coreMesh.material as THREE.MeshBasicMaterial).opacity = 0.95 * fadeAlpha;
+      }
+      const innerGlowMesh = pGroup.getObjectByName('beamInnerGlow') as THREE.Mesh | undefined;
+      if (innerGlowMesh) {
+        const gScale = 0.92 + 0.15 * Math.sin(time * 11.0);
+        innerGlowMesh.scale.set(gScale, gScale, activeLen);
+        (innerGlowMesh.material as THREE.MeshBasicMaterial).opacity = 0.54 * fadeAlpha;
+      }
+      const outerAuraMesh = pGroup.getObjectByName('beamOuterAura') as THREE.Mesh | undefined;
+      if (outerAuraMesh) {
+        const aScale = 0.95 + 0.12 * Math.cos(time * 8.0);
+        outerAuraMesh.scale.set(aScale, aScale, activeLen);
+        (outerAuraMesh.material as THREE.MeshBasicMaterial).opacity = 0.28 * fadeAlpha;
+      }
+
+      // Update the 6 intertwined braided helical plasma strands
+      const strandsGroup = pGroup.getObjectByName('beamStrandsGroup') as THREE.Group | undefined;
+      if (strandsGroup) {
+        const twistCycles = Math.max(3.5, Math.min(9.5, fullLen * 0.14));
+        strandsGroup.children.forEach((child, sIdx) => {
+          const sMesh = child as THREE.Mesh;
+          const posAttr = sMesh.geometry.attributes.position as THREE.BufferAttribute;
+          const isPrimary = sIdx % 2 === 0;
+          const dirSign = isPrimary ? 1 : -1;
+          const tubeRad = isPrimary ? 0.068 : 0.052;
+          const phaseOffset = (sIdx * Math.PI * 2) / STRAND_COUNT;
+
+          (sMesh.material as THREE.MeshBasicMaterial).opacity = (isPrimary ? 0.92 : 0.80) * fadeAlpha;
+
+          let vIdx = 0;
+          for (let i = 0; i <= STRAND_SEGS; i++) {
+            const u = i / STRAND_SEGS;
+            const z = u * activeLen;
+            // Smooth pinch at node endpoints (u=0 and u=1), expanding into a braided bundle along the span
+            const env = Math.pow(Math.sin(u * Math.PI), 0.62);
+
+            const theta = dirSign * (u * twistCycles * Math.PI * 2 - time * 9.0) + phaseOffset;
+            const harmonic = Math.sin(u * twistCycles * Math.PI * 3.0 - time * 12.5 + sIdx * 1.4) * 0.14;
+            const braidR = 0.045 + (0.38 + harmonic) * env;
+
+            const cx = Math.cos(theta) * braidR;
+            const cy = Math.sin(theta) * braidR;
+
+            for (let k = 0; k < STRAND_SIDES; k++) {
+              const ringAng = (k * Math.PI * 2) / STRAND_SIDES;
+              const vx = cx + Math.cos(ringAng) * tubeRad;
+              const vy = cy + Math.sin(ringAng) * tubeRad;
+              posAttr.setXYZ(vIdx, vx, vy, z);
+              vIdx++;
+            }
+          }
+          posAttr.needsUpdate = true;
+        });
+      }
+
+      // Update endpoint emitter flares & halos
+      const srcHalo = pGroup.getObjectByName('beamSrcHalo') as THREE.Mesh | undefined;
+      if (srcHalo) {
+        const sScale = 0.9 + 0.25 * Math.sin(time * 12.0);
+        srcHalo.scale.set(sScale, sScale, 1);
+      }
+      const dstFlare = pGroup.getObjectByName('beamDstFlare') as THREE.Mesh | undefined;
+      if (dstFlare) {
+        dstFlare.position.set(0, 0, activeLen);
+        const dScale = 0.9 + 0.22 * Math.cos(time * 14.0);
+        dstFlare.scale.set(dScale, dScale, dScale);
+      }
+      const dstHalo = pGroup.getObjectByName('beamDstHalo') as THREE.Mesh | undefined;
+      if (dstHalo) {
+        dstHalo.position.set(0, 0, activeLen);
+        const dHaloScale = 0.85 + 0.35 * ((time * 3.5) % 1.0);
+        dstHalo.scale.set(dHaloScale, dHaloScale, 1);
+      }
+
+      // Update directional energy bolts racing from Source -> Destination
+      const pulsesGroup = pGroup.getObjectByName('beamPulsesGroup') as THREE.Group | undefined;
+      if (pulsesGroup) {
+        pulsesGroup.children.forEach((bolt, bIdx) => {
+          const boltT = ((time * 1.35 + bIdx / 3) % 1.0);
+          bolt.position.set(0, 0, boltT * activeLen);
+        });
+      }
     });
 
     // 8. WATCH TOWER EMERGENCY SIREN & 3D TRAVELING SOUNDWAVE SHOCKWAVES
@@ -7135,10 +7376,10 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
             setIsCoordinateGridActive(next);
             simulationEngine.setCoordinateGrid(next);
           }}
-          className={`px-3 py-1.5 rounded-xl backdrop-blur-md border transition-colors flex items-center gap-1.5 cursor-pointer text-xs shadow-lg ${
+          className={`px-3.5 py-1.5 rounded-xl backdrop-blur-md border transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-extrabold shadow-lg ${
             isCoordinateGridActive
-              ? 'bg-cyan-600/90 border-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-              : 'bg-slate-900/90 border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800'
+              ? 'bg-cyan-600/95 border-cyan-400 text-white font-extrabold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+              : 'bg-slate-900/95 border-slate-700 text-white hover:bg-slate-800'
           }`}
           title="Toggle Area Coordinate Graph &amp; Ruler (HotKey: G)"
         >
@@ -7146,6 +7387,19 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
           <span>Scale Graph {isCoordinateGridActive ? 'ON' : 'OFF'}</span>
         </button>
       </div>
+
+      {/* Live Bold Narrative Flow Banner (When not in Cinematic Overlay) */}
+      {!simulationEngine.isCinematicDemoActive && simulationEngine.activeHazard && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-950/95 backdrop-blur-xl border-2 border-sky-400/80 px-4 py-2 rounded-xl shadow-[0_0_28px_rgba(56,189,248,0.35)] flex flex-col items-center gap-1 font-mono">
+          <div className="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
+            <span>{simulationEngine.activeHazard.name}</span>
+          </div>
+          <div className="text-xs sm:text-sm font-extrabold text-yellow-300 tracking-wide uppercase">
+            NARRATIVE STEP {simulationEngine.currentNarrativeStepIndex + 1}/17: {simulationEngine.currentNarrativeStepLabel}
+          </div>
+        </div>
+      )}
 
       {/* Landslide Hazard Active HUD */}
       {simulationEngine.activeHazard?.type === 'LANDSLIDE' && (

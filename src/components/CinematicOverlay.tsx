@@ -12,8 +12,8 @@
  * the engine's subscribe() observer pattern to avoid unnecessary re-renders.
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { simulationEngine } from '../engine/simulationEngine';
+import React, { useEffect, useState, useCallback } from 'react';
+import { simulationEngine, NARRATIVE_FLOW_STEPS } from '../engine/simulationEngine';
 import { cinematicDemoManager } from '../cinematic/CinematicDemoManager';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,15 +99,19 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
   }, [onStartDemo]);
 
   // ── Cinematic runtime state (read from engine each subscriber tick) ─────────
-  const [isActive,     setIsActive]     = useState(simulationEngine.isCinematicDemoActive);
-  const [cloudOpacity, setCloudOpacity] = useState(simulationEngine.cinematicCloudOpacity);
-  const [phase,        setPhase]        = useState<string | null>(simulationEngine.cinematicPhase);
+  const [isActive,       setIsActive]       = useState(simulationEngine.isCinematicDemoActive);
+  const [cloudOpacity,   setCloudOpacity]   = useState(simulationEngine.cinematicCloudOpacity);
+  const [phase,          setPhase]          = useState<string | null>(simulationEngine.cinematicPhase);
+  const [narrativeIdx,   setNarrativeIdx]   = useState<number>(simulationEngine.currentNarrativeStepIndex);
+  const [narrativeLabel, setNarrativeLabel] = useState<string>(simulationEngine.currentNarrativeStepLabel);
 
   useEffect(() => {
     return simulationEngine.subscribe(() => {
       setIsActive(simulationEngine.isCinematicDemoActive);
       setCloudOpacity(simulationEngine.cinematicCloudOpacity);
       setPhase(simulationEngine.cinematicPhase);
+      setNarrativeIdx(simulationEngine.currentNarrativeStepIndex);
+      setNarrativeLabel(simulationEngine.currentNarrativeStepLabel);
     });
   }, []);
 
@@ -394,16 +398,16 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
         </div>
       )}
 
-      {/* ── 4. ACTIVE CINEMATIC HUD — Skip button + phase label ───────────── */}
+      {/* ── 4. ACTIVE CINEMATIC HUD — Skip button + Bold Phase Label + Narrative Flow ── */}
       {isActive && !showWelcome && (
         <>
-          {/* Phase label — bottom center */}
+          {/* Phase label & Narrative Flow — bottom center */}
           {phase && phase !== 'FADE_OUT' && PHASE_LABELS[phase] && (
             <div
               aria-live="polite"
               style={{
                 position: 'fixed',
-                bottom: '4.5rem',
+                bottom: '2.75rem',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 56,
@@ -411,38 +415,93 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '0.55rem',
+                gap: '0.6rem',
+                width: 'min(94vw, 860px)',
               }}
             >
-              {/* Phase name */}
-              <span
+              {/* High-visibility Bold Phase Title Card (ENVIRONMENT OVERVIEW, FLOOD, LANDSLIDE, etc.) */}
+              <div
                 key={phase}
                 style={{
-                  color: 'rgba(226,232,240,0.82)',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.32em',
-                  textTransform: 'uppercase',
-                  fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-                  textShadow: '0 1px 8px rgba(0,0,0,0.8)',
-                  animation: 'cinematic-label-in 0.6s ease-out',
+                  background: 'rgba(2, 6, 23, 0.92)',
+                  border: '2px solid rgba(56, 189, 248, 0.85)',
+                  borderRadius: '0.85rem',
+                  padding: '0.65rem 1.6rem',
+                  boxShadow: '0 0 28px rgba(14, 165, 233, 0.45), 0 8px 24px rgba(0, 0, 0, 0.85)',
+                  backdropFilter: 'blur(12px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  animation: 'cinematic-label-in 0.5s ease-out',
                 }}
               >
-                {PHASE_LABELS[phase]}
-              </span>
+                <span
+                  style={{
+                    color: '#ffffff',
+                    fontSize: 'clamp(1.05rem, 2.2vw, 1.45rem)',
+                    fontWeight: 900,
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                    fontFamily: "'Chakra Petch', 'Plus Jakarta Sans', system-ui, sans-serif",
+                    textShadow: '0 0 18px rgba(56, 189, 248, 0.75), 0 2px 6px rgba(0,0,0,0.95)',
+                    textAlign: 'center',
+                  }}
+                >
+                  {PHASE_LABELS[phase]}
+                </span>
+
+                {/* Active Narrative Step Callout */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.1em',
+                      color: '#38bdf8',
+                      textTransform: 'uppercase',
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    STEP {narrativeIdx + 1}/{NARRATIVE_FLOW_STEPS.length}:
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 'clamp(0.88rem, 1.6vw, 1.1rem)',
+                      fontWeight: 900,
+                      letterSpacing: '0.08em',
+                      color: '#fde047',
+                      textTransform: 'uppercase',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      textShadow: '0 0 14px rgba(250, 204, 21, 0.6)',
+                    }}
+                  >
+                    {narrativeLabel}
+                  </span>
+                </div>
+              </div>
 
               {/* Progress dots */}
-              <div style={{ display: 'flex', gap: '0.38rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', background: 'rgba(2,6,23,0.85)', padding: '0.35rem 0.85rem', borderRadius: '9999px', border: '1px solid rgba(56,189,248,0.35)' }}>
                 {PHASE_ORDER.slice(0, -1).map((p, i) => (
                   <div
                     key={p}
                     style={{
-                      width:  i === phaseIndex ? '1.6rem' : '0.38rem',
-                      height: '0.28rem',
+                      width:  i === phaseIndex ? '2.0rem' : '0.5rem',
+                      height: '0.4rem',
                       borderRadius: '9999px',
                       background: i <= phaseIndex
-                        ? 'rgba(56,189,248,0.85)'
-                        : 'rgba(148,163,184,0.25)',
+                        ? '#38bdf8'
+                        : 'rgba(148,163,184,0.35)',
+                      boxShadow: i === phaseIndex ? '0 0 10px rgba(56,189,248,0.8)' : 'none',
                       transition: 'width 0.4s ease, background 0.4s ease',
                     }}
                   />
@@ -450,6 +509,95 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
               </div>
             </div>
           )}
+
+          {/* Live 17-Step Vertical Narrative Flowchart Card — Left Side */}
+          <div
+            style={{
+              position: 'fixed',
+              top: '4.1rem',
+              left: '0.85rem',
+              zIndex: 56,
+              pointerEvents: 'none',
+              background: 'rgba(2, 6, 23, 0.90)',
+              border: '2px solid rgba(56, 189, 248, 0.65)',
+              borderRadius: '0.85rem',
+              padding: '0.6rem 0.85rem',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
+              maxHeight: 'calc(100vh - 8.5rem)',
+              overflowY: 'auto',
+              width: 'clamp(220px, 22vw, 290px)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.76rem',
+                fontWeight: 900,
+                letterSpacing: '0.12em',
+                color: '#38bdf8',
+                textTransform: 'uppercase',
+                borderBottom: '1px solid rgba(56, 189, 248, 0.35)',
+                paddingBottom: '0.35rem',
+                marginBottom: '0.4rem',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              DECISION NARRATIVE FLOW
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.08rem' }}>
+              {NARRATIVE_FLOW_STEPS.map((stepText, idx) => {
+                const isCurrent = idx === narrativeIdx;
+                const isDone = idx < narrativeIdx;
+                return (
+                  <React.Fragment key={stepText}>
+                    <div
+                      style={{
+                        width: '100%',
+                        padding: isCurrent ? '0.24rem 0.5rem' : '0.12rem 0.45rem',
+                        borderRadius: '0.35rem',
+                        background: isCurrent
+                          ? 'rgba(14, 165, 233, 0.32)'
+                          : isDone
+                          ? 'rgba(16, 185, 129, 0.14)'
+                          : 'transparent',
+                        border: isCurrent
+                          ? '1.5px solid #38bdf8'
+                          : isDone
+                          ? '1px solid rgba(16, 185, 129, 0.35)'
+                          : '1px solid transparent',
+                        color: isCurrent
+                          ? '#fef08a'
+                          : isDone
+                          ? '#6ee7b7'
+                          : '#cbd5e1',
+                        fontSize: isCurrent ? '0.76rem' : '0.68rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.04em',
+                        textAlign: 'center',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        boxShadow: isCurrent ? '0 0 12px rgba(56, 189, 248, 0.45)' : 'none',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {stepText}
+                    </div>
+                    {idx < NARRATIVE_FLOW_STEPS.length - 1 && (
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 900,
+                          lineHeight: 0.95,
+                          color: idx < narrativeIdx ? '#34d399' : '#38bdf8',
+                        }}
+                      >
+                        ↓
+                      </span>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Skip Demo button — top right */}
           <button
@@ -460,32 +608,32 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
               top: '4.5rem',
               right: '1.25rem',
               zIndex: 65,
-              padding: '0.45rem 1.1rem',
-              fontSize: '0.72rem',
-              fontWeight: 600,
+              padding: '0.55rem 1.25rem',
+              fontSize: '0.82rem',
+              fontWeight: 800,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
               fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-              color: 'rgba(226,232,240,0.85)',
-              background: 'rgba(15,23,42,0.78)',
-              border: '1px solid rgba(148,163,184,0.22)',
-              borderRadius: '0.4rem',
+              color: '#ffffff',
+              background: 'rgba(15,23,42,0.92)',
+              border: '2px solid rgba(56,189,248,0.6)',
+              borderRadius: '0.5rem',
               cursor: 'pointer',
               backdropFilter: 'blur(8px)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
               transition: 'background 0.2s, border-color 0.2s, color 0.2s',
             }}
             onMouseEnter={e => {
               const b = e.currentTarget as HTMLButtonElement;
-              b.style.background = 'rgba(30,41,59,0.92)';
-              b.style.borderColor = 'rgba(148,163,184,0.45)';
-              b.style.color = '#f1f5f9';
+              b.style.background = 'rgba(30,41,59,0.98)';
+              b.style.borderColor = '#38bdf8';
+              b.style.color = '#ffffff';
             }}
             onMouseLeave={e => {
               const b = e.currentTarget as HTMLButtonElement;
-              b.style.background = 'rgba(15,23,42,0.78)';
-              b.style.borderColor = 'rgba(148,163,184,0.22)';
-              b.style.color = 'rgba(226,232,240,0.85)';
+              b.style.background = 'rgba(15,23,42,0.92)';
+              b.style.borderColor = 'rgba(56,189,248,0.6)';
+              b.style.color = '#ffffff';
             }}
           >
             SKIP DEMO  ✕
