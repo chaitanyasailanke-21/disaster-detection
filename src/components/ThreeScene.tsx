@@ -68,12 +68,19 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const mountRef = useRef<HTMLDivElement>(null);
   const [activeCameraView, setActiveCameraView] = useState<CameraMode>('FREE_CAMERA');
   const activeCameraViewRef = useRef<CameraMode>('FREE_CAMERA');
-  const [showControlsHint, setShowControlsHint] = useState<boolean>(true);
+  const [showControlsHint, setShowControlsHint] = useState<boolean>(false);
   const [clickedObject, setClickedObject] = useState<ClickedObjectInfo | null>(null);
 
   // Temporary Coordinate Reference Graph & Surveyor Probe (Turned off primarily)
-  const [isCoordinateGridActive, setIsCoordinateGridActive] = useState<boolean>(false);
-  const isCoordinateGridActiveRef = useRef<boolean>(false);
+  const [isCoordinateGridActive, setIsCoordinateGridActive] = useState<boolean>(simulationEngine.isCoordinateGridActive);
+  const isCoordinateGridActiveRef = useRef<boolean>(simulationEngine.isCoordinateGridActive);
+
+  useEffect(() => {
+    return simulationEngine.subscribe(() => {
+      setIsCoordinateGridActive(simulationEngine.isCoordinateGridActive);
+      isCoordinateGridActiveRef.current = simulationEngine.isCoordinateGridActive;
+    });
+  }, []);
   const [hoveredCoords, setHoveredCoords] = useState<{ x: number; y: number; z: number } | null>(null);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
 
@@ -106,6 +113,7 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
   const landslideDustParticlesRef = useRef<THREE.Points | null>(null);
   const factorySmokeRef = useRef<THREE.Points | null>(null);
   const factoryBeaconRef = useRef<THREE.PointLight | null>(null);
+  const factorySatelliteRef = useRef<THREE.Group | null>(null);
   
   // Dynamic disaster hillside elements: rolling boulders, slumping trees, soil slip, and river surge
   interface RollingBoulderInfo {
@@ -761,6 +769,17 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
               status: simulationEngine.activeHazard?.type === 'LANDSLIDE' ? 'ACTIVE SLOPE COLLAPSE' : 'MONITORED STABLE',
               details: 'Steep hill area composed of exposed soil, mud slip chutes, and fractured rock scree. Monitored by tilt and seismic geophone sensors for slope failure.',
               position: [-10, 4.2, 14]
+            });
+            return;
+          }
+          if (cur.name === 'factorySatellite') {
+            setClickedObject({
+              id: 'factory-satellite',
+              name: 'AEGIS-SAT 01 — Orbital Cloud Archive & Backhaul Satellite',
+              category: 'INFRASTRUCTURE',
+              status: simulationEngine.isCloudUploading ? '🔴 RED PLASMA CLOUD UPLOAD ACTIVE' : (simulationEngine.isInternetOnline ? 'CLOUD UPLINK READY' : 'WAN BACKHAUL OFFLINE (LOCAL LORA EDGE ACTIVE)'),
+              details: 'High-altitude orbital cloud storage & Ka-band backhaul satellite. After an environmental hazard completes and returns to normal, the Superior Node transmits a red volumetric plasma beam to upload and permanently save the verified incident ledger to the cloud.',
+              position: [38.0, 58.0, -30.0]
             });
             return;
           }
@@ -3278,6 +3297,351 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
     chemicalOutletTrickleRef.current = trickle;
 
     factoryGroup.add(outletGroup);
+
+    // ==========================================
+    // 10. HIGH-ALTITUDE ORBITAL CLOUD SATELLITE (Matches User's Shared Satellite Image)
+    // Positioned at high orbital altitude X = 38.0, Y = 58.0, Z = -30.0 (not watching the factory;
+    // receives post-hazard red volumetric plasma beam cloud uploads from the Superior Node).
+    // ==========================================
+    const satelliteGroup = new THREE.Group();
+    satelliteGroup.name = 'factorySatellite';
+    satelliteGroup.position.set(38.0, 58.0, -30.0);
+    satelliteGroup.scale.setScalar(1.35);
+
+    // Core tilt group matching the exact isometric orientation in the user's shared image
+    const satTiltGroup = new THREE.Group();
+    satTiltGroup.rotation.set(0.26, -0.45, -0.30);
+
+    // Satellite Materials
+    const goldFoilMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.22,
+      metalness: 0.82,
+      roughness: 0.24,
+      flatShading: true,
+    });
+    const deepGoldMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      emissive: 0x451a03,
+      emissiveIntensity: 0.18,
+      metalness: 0.88,
+      roughness: 0.28,
+    });
+    const silverChromeMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.92,
+      roughness: 0.16,
+    });
+    const darkTitaniumMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.75,
+      roughness: 0.32,
+    });
+    const dishWhiteMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.22,
+      metalness: 0.15,
+      side: THREE.DoubleSide,
+    });
+    const dishInnerMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      roughness: 0.28,
+      metalness: 0.25,
+      side: THREE.DoubleSide,
+    });
+
+    // Procedural High-Resolution Solar Array Canvas Texture (3 rows x 10 columns of deep blue photovoltaic cells + silver grid)
+    const solarCanvas = document.createElement('canvas');
+    solarCanvas.width = 1024;
+    solarCanvas.height = 384;
+    const sCtx2 = solarCanvas.getContext('2d');
+    if (sCtx2) {
+      // Metallic silver outer frame background
+      sCtx2.fillStyle = '#cbd5e1';
+      sCtx2.fillRect(0, 0, 1024, 384);
+
+      // Dark inner border
+      sCtx2.fillStyle = '#1e293b';
+      sCtx2.fillRect(10, 10, 1004, 364);
+
+      const cols = 10;
+      const rows = 3;
+      const padX = 16;
+      const padY = 16;
+      const gap = 8;
+      const cellW = (1024 - padX * 2 - gap * (cols - 1)) / cols;
+      const cellH = (384 - padY * 2 - gap * (rows - 1)) / rows;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cx = padX + c * (cellW + gap);
+          const cy = padY + r * (cellH + gap);
+
+          // Rich photovoltaic cobalt/royal blue gradient per cell
+          const cellGrad = sCtx2.createLinearGradient(cx, cy, cx + cellW, cy + cellH);
+          cellGrad.addColorStop(0, '#1d4ed8');
+          cellGrad.addColorStop(0.5, '#2563eb');
+          cellGrad.addColorStop(1, '#1e3a8a');
+          sCtx2.fillStyle = cellGrad;
+          sCtx2.fillRect(cx, cy, cellW, cellH);
+
+          // Subtle fine busbar lines inside each solar cell
+          sCtx2.strokeStyle = 'rgba(147, 197, 253, 0.38)';
+          sCtx2.lineWidth = 1.5;
+          sCtx2.beginPath();
+          sCtx2.moveTo(cx + cellW * 0.5, cy);
+          sCtx2.lineTo(cx + cellW * 0.5, cy + cellH);
+          sCtx2.stroke();
+
+          // Crisp silver-blue cell border
+          sCtx2.strokeStyle = '#93c5fd';
+          sCtx2.lineWidth = 2;
+          sCtx2.strokeRect(cx, cy, cellW, cellH);
+        }
+      }
+
+      // Thicker vertical hinges dividing wing into 2 foldable sub-panels
+      sCtx2.fillStyle = '#e2e8f0';
+      sCtx2.fillRect(508, 4, 8, 376);
+    }
+    const solarPanelTexture = new THREE.CanvasTexture(solarCanvas);
+    solarPanelTexture.anisotropy = 4;
+
+    const solarPanelFaceMat = new THREE.MeshStandardMaterial({
+      map: solarPanelTexture,
+      roughness: 0.18,
+      metalness: 0.65,
+      emissive: 0x1e3a8a,
+      emissiveIntensity: 0.22,
+    });
+
+    // A. CENTRAL OCTAGONAL / CYLINDRICAL GOLD MLI SATELLITE BUS
+    const mainBus = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.45, 4.2, 8), goldFoilMat);
+    mainBus.castShadow = true;
+    satTiltGroup.add(mainBus);
+
+    // Recessed dark avionics band & gold louver panels around the bus
+    const midBand = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.48, 1.15, 16), darkTitaniumMat);
+    midBand.position.y = 0.25;
+    satTiltGroup.add(midBand);
+
+    for (let i = 0; i < 8; i++) {
+      const ang = (i * Math.PI) / 4;
+      const louver = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.82, 0.12), deepGoldMat);
+      louver.position.set(Math.sin(ang) * 1.46, 0.25, Math.cos(ang) * 1.46);
+      louver.rotation.y = ang;
+      satTiltGroup.add(louver);
+    }
+
+    // Metallic Silver Structural Rings along the bus
+    [-2.1, -0.45, 0.95, 2.1].forEach(ry => {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.54, 1.54, 0.18, 20), silverChromeMat);
+      ring.position.y = ry;
+      satTiltGroup.add(ring);
+    });
+
+    // Upper Conical / Stepped Payload Collar & Gold Instrument Module
+    const upperCollar = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.48, 0.85, 16), silverChromeMat);
+    upperCollar.position.y = 2.52;
+    satTiltGroup.add(upperCollar);
+
+    const upperGoldModule = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.98, 1.1, 8), goldFoilMat);
+    upperGoldModule.position.y = 3.45;
+    satTiltGroup.add(upperGoldModule);
+
+    const topCapRing = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.16, 16), silverChromeMat);
+    topCapRing.position.y = 4.02;
+    satTiltGroup.add(topCapRing);
+
+    const topSensorTurret = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.55, 12), darkTitaniumMat);
+    topSensorTurret.position.y = 4.35;
+    satTiltGroup.add(topSensorTurret);
+
+    // Lower Propulsion / Apogee Thruster Bay
+    const lowerCollar = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.05, 0.75, 16), darkTitaniumMat);
+    lowerCollar.position.y = -2.48;
+    satTiltGroup.add(lowerCollar);
+
+    const thrusterNozzle = new THREE.Mesh(new THREE.ConeGeometry(0.68, 0.85, 16, 1, true), silverChromeMat);
+    thrusterNozzle.position.y = -3.1;
+    satTiltGroup.add(thrusterNozzle);
+
+    // B. TWO LARGE OUTSTRETCHED BLUE PHOTOVOLTAIC SOLAR ARRAY WINGS (Left & Right)
+    // Central tubular deployment boom running through the bus
+    const mainSolarBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 23.5, 12), silverChromeMat);
+    mainSolarBoom.rotation.z = Math.PI / 2;
+    mainSolarBoom.position.y = 0.25;
+    satTiltGroup.add(mainSolarBoom);
+
+    [-1, 1].forEach(dir => {
+      const wingGroup = new THREE.Group();
+      const wingCenterX = dir * 6.9;
+      wingGroup.position.set(wingCenterX, 0.25, 0);
+
+      // Backing structural plate (silver)
+      const backingMesh = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.10, 3.2), silverChromeMat);
+      backingMesh.castShadow = true;
+      wingGroup.add(backingMesh);
+
+      // Top & Bottom textured blue solar cell faces
+      const frontFace = new THREE.Mesh(new THREE.PlaneGeometry(9.1, 3.1), solarPanelFaceMat);
+      frontFace.rotation.x = -Math.PI / 2;
+      frontFace.position.y = 0.06;
+      wingGroup.add(frontFace);
+
+      const backFace = new THREE.Mesh(new THREE.PlaneGeometry(9.1, 3.1), solarPanelFaceMat);
+      backFace.rotation.x = Math.PI / 2;
+      backFace.position.y = -0.06;
+      wingGroup.add(backFace);
+
+      // Tilt the solar wings slightly toward the camera/sun so the blue grid cells shine vividly
+      wingGroup.rotation.x = 0.52;
+
+      // Yoke V-struts connecting the wing inner edge to the central bus
+      [-0.85, 0.85].forEach(zOff => {
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.55, 8), silverChromeMat);
+        strut.rotation.z = Math.PI / 2;
+        strut.rotation.y = dir * (zOff * 0.35);
+        strut.position.set(dir * 1.9, 0.25 + zOff * 0.25, zOff * 0.55);
+        satTiltGroup.add(strut);
+      });
+
+      satTiltGroup.add(wingGroup);
+    });
+
+    // C. PRIMARY WHITE PARABOLIC HIGH-GAIN DISH ANTENNA (Front-Right, matching image)
+    const primaryDishGroup = new THREE.Group();
+    primaryDishGroup.position.set(0.35, -0.55, 2.05);
+    primaryDishGroup.rotation.set(0.28, 0.18, 0);
+
+    // Parabolic dish shell (curved spherical cap)
+    const dishShellGeo = new THREE.SphereGeometry(1.75, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.34);
+    const dishShell = new THREE.Mesh(dishShellGeo, dishWhiteMat);
+    dishShell.rotation.x = -Math.PI / 2;
+    dishShell.position.z = -1.42;
+    primaryDishGroup.add(dishShell);
+
+    // Rim ring around the parabolic dish opening
+    const dishRim = new THREE.Mesh(new THREE.TorusGeometry(1.53, 0.06, 12, 32), silverChromeMat);
+    dishRim.position.z = 0.08;
+    primaryDishGroup.add(dishRim);
+
+    // Central gold/dark hub inside the dish
+    const dishCenterHub = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.22, 16), deepGoldMat);
+    dishCenterHub.rotation.x = Math.PI / 2;
+    dishCenterHub.position.z = 0.02;
+    primaryDishGroup.add(dishCenterHub);
+
+    // 3 Tripod Feed-Horn Struts & Central Feed Transceiver
+    for (let s = 0; s < 3; s++) {
+      const sAng = (s * 2 * Math.PI) / 3 - Math.PI / 2;
+      const rimX = Math.cos(sAng) * 1.38;
+      const rimY = Math.sin(sAng) * 1.38;
+      const pStart = new THREE.Vector3(rimX, rimY, 0.08);
+      const pEnd = new THREE.Vector3(0, 0, 1.35);
+      const strutVec = new THREE.Vector3().subVectors(pEnd, pStart);
+      const strutMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, strutVec.length(), 6),
+        silverChromeMat
+      );
+      strutMesh.position.copy(pStart).addScaledVector(strutVec, 0.5);
+      strutMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), strutVec.clone().normalize());
+      primaryDishGroup.add(strutMesh);
+    }
+
+    const feedHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.38, 12), darkTitaniumMat);
+    feedHorn.rotation.x = Math.PI / 2;
+    feedHorn.position.z = 1.38;
+    primaryDishGroup.add(feedHorn);
+
+    const feedTip = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), goldFoilMat);
+    feedTip.position.z = 1.56;
+    primaryDishGroup.add(feedTip);
+
+    // Mounting arm connecting dish to satellite bus
+    const dishMountArm = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 1.0, 10), silverChromeMat);
+    dishMountArm.rotation.x = Math.PI / 2;
+    dishMountArm.position.z = -0.35;
+    primaryDishGroup.add(dishMountArm);
+
+    satTiltGroup.add(primaryDishGroup);
+
+    // D. SECONDARY WHITE PARABOLIC DISH / DOME ON UPPER BUS (Matching upper-left dish in image)
+    const secondaryDishGroup = new THREE.Group();
+    secondaryDishGroup.position.set(-0.95, 1.95, 1.35);
+    secondaryDishGroup.rotation.set(-0.22, -0.45, 0.15);
+
+    const secDishGeo = new THREE.SphereGeometry(0.95, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.34);
+    const secDish = new THREE.Mesh(secDishGeo, dishInnerMat);
+    secDish.rotation.x = -Math.PI / 2;
+    secDish.position.z = -0.75;
+    secondaryDishGroup.add(secDish);
+
+    const secRim = new THREE.Mesh(new THREE.TorusGeometry(0.83, 0.045, 10, 24), silverChromeMat);
+    secRim.position.z = 0.05;
+    secondaryDishGroup.add(secRim);
+
+    const secFeed = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.55, 10), goldFoilMat);
+    secFeed.rotation.x = Math.PI / 2;
+    secFeed.position.z = 0.32;
+    secondaryDishGroup.add(secFeed);
+
+    satTiltGroup.add(secondaryDishGroup);
+
+    // E. PROTRUDING TELEMETRY WHIP ANTENNAS & GOLD RF BOOMS
+    [
+      { pos: [0.65, 3.8, 0.65], rot: [0.3, 0, -0.3], len: 2.2 },
+      { pos: [-0.65, 3.8, -0.55], rot: [-0.25, 0, 0.35], len: 1.9 },
+      { pos: [0.85, -1.8, -1.1], rot: [-0.4, 0, -0.35], len: 2.0 },
+    ].forEach(ant => {
+      const antBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, ant.len, 8), silverChromeMat);
+      antBoom.position.set(ant.pos[0], ant.pos[1], ant.pos[2]);
+      antBoom.rotation.set(ant.rot[0], ant.rot[1], ant.rot[2]);
+      satTiltGroup.add(antBoom);
+
+      const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), goldFoilMat);
+      antTip.position.set(
+        ant.pos[0] - Math.sin(ant.rot[2]) * (ant.len * 0.5),
+        ant.pos[1] + Math.cos(ant.rot[0]) * (ant.len * 0.5),
+        ant.pos[2] + Math.sin(ant.rot[0]) * (ant.len * 0.5)
+      );
+      satTiltGroup.add(antTip);
+    });
+
+    satelliteGroup.add(satTiltGroup);
+
+    // Floating Satellite Identification Badge (Orbital Cloud Uplink & Storage)
+    const satBadgeCanvas = document.createElement('canvas');
+    satBadgeCanvas.width = 512;
+    satBadgeCanvas.height = 128;
+    const sbCtx = satBadgeCanvas.getContext('2d');
+    if (sbCtx) {
+      sbCtx.fillStyle = 'rgba(2, 6, 23, 0.92)';
+      sbCtx.roundRect(8, 8, 496, 112, 18);
+      sbCtx.fill();
+      sbCtx.lineWidth = 4;
+      sbCtx.strokeStyle = '#ff1744';
+      sbCtx.stroke();
+
+      sbCtx.font = '900 26px sans-serif';
+      sbCtx.fillStyle = '#ffffff';
+      sbCtx.fillText('🛰️ AEGIS-SAT 01 [CLOUD SATELLITE]', 20, 52);
+
+      sbCtx.font = '800 19px monospace';
+      sbCtx.fillStyle = '#fda4af';
+      sbCtx.fillText('ORBITAL CLOUD STORAGE & BACKHAUL', 20, 92);
+    }
+    const satBadgeTex = new THREE.CanvasTexture(satBadgeCanvas);
+    const satBadgeSprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: satBadgeTex, transparent: true, depthTest: false })
+    );
+    satBadgeSprite.scale.set(8.8, 2.2, 1);
+    satBadgeSprite.position.set(0, 6.2, 0);
+    satelliteGroup.add(satBadgeSprite);
+
+    scene.add(satelliteGroup);
+    factorySatelliteRef.current = satelliteGroup;
 
     scene.add(factoryGroup);
   }
@@ -6907,6 +7271,10 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (nodeId === 'LOCAL_COMPUTER' || nodeId === 'BROADCAST') {
         return null;
       }
+      if (nodeId === 'NODE-SATELLITE') {
+        const satY = factorySatelliteRef.current ? factorySatelliteRef.current.position.y - 1.5 : 56.5;
+        return new THREE.Vector3(38.0, satY, -30.0);
+      }
       if (nodeId === 'NODE-SUPERIOR') {
         const gy = getMountainTerrainElevation(42.5, 2.5);
         return new THREE.Vector3(42.5, gy + 14.6, 2.5);
@@ -6939,12 +7307,19 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         pGroup = new THREE.Group();
         pGroup.userData = { packet: p };
 
-        // 1. Central Brilliant White-Cyan Core Cylinder (unit Z length 0 -> 1)
+        const isRedCloudBeam = p.messageType === 'CLOUD_UPLOAD' || p.destinationNodeId === 'NODE-SATELLITE';
+        const coreHex = isRedCloudBeam ? 0xffe4e6 : 0xe0f2fe;
+        const innerHex = isRedCloudBeam ? 0xff1744 : 0x22d3ee;
+        const outerHex = isRedCloudBeam ? 0xdc2626 : 0x0284c7;
+        const strandPrimaryHex = isRedCloudBeam ? 0xffcdd2 : 0xe0f2fe;
+        const strandSecondaryHex = isRedCloudBeam ? 0xff1744 : 0x38bdf8;
+
+        // 1. Central Brilliant Core Cylinder (unit Z length 0 -> 1)
         const coreGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.0, 10, 1, true);
         coreGeo.rotateX(Math.PI / 2);
         coreGeo.translate(0, 0, 0.5);
         const coreMat = new THREE.MeshBasicMaterial({
-          color: 0xe0f2fe,
+          color: coreHex,
           transparent: true,
           opacity: 0.96,
           blending: THREE.AdditiveBlending,
@@ -6955,14 +7330,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         coreMesh.name = 'beamCore';
         pGroup.add(coreMesh);
 
-        // 2. Inner Electric-Cyan Glow Sheath
+        // 2. Inner Electric Glow Sheath
         const innerGlowGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.0, 10, 1, true);
         innerGlowGeo.rotateX(Math.PI / 2);
         innerGlowGeo.translate(0, 0, 0.5);
         const innerGlowMat = new THREE.MeshBasicMaterial({
-          color: 0x22d3ee,
+          color: innerHex,
           transparent: true,
-          opacity: 0.52,
+          opacity: 0.58,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
@@ -6971,14 +7346,14 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         innerGlowMesh.name = 'beamInnerGlow';
         pGroup.add(innerGlowMesh);
 
-        // 3. Wide Volumetric Cyan Aura Sheath
+        // 3. Wide Volumetric Aura Sheath
         const outerAuraGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.0, 10, 1, true);
         outerAuraGeo.rotateX(Math.PI / 2);
         outerAuraGeo.translate(0, 0, 0.5);
         const outerAuraMat = new THREE.MeshBasicMaterial({
-          color: 0x0284c7,
+          color: outerHex,
           transparent: true,
-          opacity: 0.28,
+          opacity: 0.34,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
@@ -7015,9 +7390,9 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
           const isPrimaryStrand = s % 2 === 0;
           const sMat = new THREE.MeshBasicMaterial({
-            color: isPrimaryStrand ? 0xe0f2fe : 0x38bdf8,
+            color: isPrimaryStrand ? strandPrimaryHex : strandSecondaryHex,
             transparent: true,
-            opacity: isPrimaryStrand ? 0.92 : 0.80,
+            opacity: isPrimaryStrand ? 0.94 : 0.84,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             side: THREE.DoubleSide
@@ -7030,16 +7405,16 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
 
         // 5. Source Emitter Flare & Target Receiver Impact Halo
         const flareMat = new THREE.MeshBasicMaterial({
-          color: 0xe0f2fe,
+          color: coreHex,
           transparent: true,
-          opacity: 0.92,
+          opacity: 0.94,
           blending: THREE.AdditiveBlending,
           depthWrite: false
         });
         const haloMat = new THREE.MeshBasicMaterial({
-          color: 0x22d3ee,
+          color: innerHex,
           transparent: true,
-          opacity: 0.78,
+          opacity: 0.82,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
@@ -7205,6 +7580,12 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
       cpuMat.color.setHex(Math.sin(time * 8) > 0 ? 0x10b981 : 0x064e3b);
     }
 
+    // Gentle orbital float & slow solar-tracking oscillation for the High-Altitude Cloud Satellite
+    if (factorySatelliteRef.current) {
+      factorySatelliteRef.current.position.y = 58.0 + Math.sin(time * 1.4) * 0.65;
+      factorySatelliteRef.current.rotation.y = Math.sin(time * 0.45) * 0.14;
+    }
+
     if (watchtowerSoundwavesRef.current) {
       watchtowerSoundwavesRef.current.visible = isSirenOn;
       if (isSirenOn) {
@@ -7368,35 +7749,15 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         </div>
       )}
 
-      {/* Area Coordinate Graph Quick Toggle — Positioned Directly Below the Blue Bar */}
-      <div className="absolute top-3 left-4 z-20">
-        <button
-          onClick={() => {
-            const next = !isCoordinateGridActive;
-            setIsCoordinateGridActive(next);
-            simulationEngine.setCoordinateGrid(next);
-          }}
-          className={`px-3.5 py-1.5 rounded-xl backdrop-blur-md border transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-extrabold shadow-lg ${
-            isCoordinateGridActive
-              ? 'bg-cyan-600/95 border-cyan-400 text-white font-extrabold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-              : 'bg-slate-900/95 border-slate-700 text-white hover:bg-slate-800'
-          }`}
-          title="Toggle Area Coordinate Graph &amp; Ruler (HotKey: G)"
-        >
-          <Grid className="w-3.5 h-3.5 text-cyan-300" />
-          <span>Scale Graph {isCoordinateGridActive ? 'ON' : 'OFF'}</span>
-        </button>
-      </div>
-
-      {/* Live Bold Narrative Flow Banner (When not in Cinematic Overlay) */}
-      {!simulationEngine.isCinematicDemoActive && simulationEngine.activeHazard && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-950/95 backdrop-blur-xl border-2 border-sky-400/80 px-4 py-2 rounded-xl shadow-[0_0_28px_rgba(56,189,248,0.35)] flex flex-col items-center gap-1 font-mono">
-          <div className="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
-            <span>{simulationEngine.activeHazard.name}</span>
+      {/* Live Bold Narrative Flow Banner (When not in Cinematic Overlay) — Half Size */}
+      {!simulationEngine.isCinematicDemoActive && (simulationEngine.activeHazard || simulationEngine.isCloudUploading) && (
+        <div className={`absolute top-2.5 left-1/2 -translate-x-1/2 z-30 bg-slate-950/95 backdrop-blur-xl border ${simulationEngine.isCloudUploading ? 'border-rose-500/90 shadow-[0_0_20px_rgba(244,63,94,0.45)]' : 'border-sky-400/80 shadow-[0_0_16px_rgba(56,189,248,0.35)]'} px-2.5 py-1 rounded-lg flex flex-col items-center gap-0.5 font-mono`}>
+          <div className="text-[9px] sm:text-[10px] font-extrabold text-white tracking-wider uppercase flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${simulationEngine.isCloudUploading ? 'bg-rose-500' : 'bg-sky-400'} animate-ping shrink-0`} />
+            <span>{simulationEngine.activeHazard ? simulationEngine.activeHazard.name : 'POST-HAZARD CLOUD SATELLITE SYNC'}</span>
           </div>
-          <div className="text-xs sm:text-sm font-extrabold text-yellow-300 tracking-wide uppercase">
-            NARRATIVE STEP {simulationEngine.currentNarrativeStepIndex + 1}/17: {simulationEngine.currentNarrativeStepLabel}
+          <div className={`text-[9px] sm:text-[10px] font-extrabold ${simulationEngine.isCloudUploading ? 'text-rose-300' : 'text-yellow-300'} tracking-wide uppercase`}>
+            STEP {simulationEngine.currentNarrativeStepIndex + 1}/19: {simulationEngine.currentNarrativeStepLabel}
           </div>
         </div>
       )}
@@ -7630,14 +7991,12 @@ export const ThreeScene: React.FC<ThreeSceneProps> = ({
         </div>
       )}
 
-      {/* Simulated Graph / Digital Twin Watermark — Positioned Directly Below the Blue Bar */}
-      <div className={`absolute top-3 right-4 z-10 pointer-events-none text-xs font-mono px-3.5 py-1.5 rounded-xl border shadow-md backdrop-blur-md transition-all ${
-        isCoordinateGridActive 
-          ? 'bg-cyan-950/90 border-cyan-500 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.3)]' 
-          : 'bg-white/80 backdrop-blur-md border-slate-300/90 text-slate-700 shadow-sm'
-      }`}>
-        {isCoordinateGridActive ? 'COORDINATE SCALE ACTIVE · 1 UNIT = 1 METRE' : 'SIMULATED DIGITAL TWIN — NOT TO SCALE'}
-      </div>
+      {/* Extra watermark hidden unless coordinate grid is active */}
+      {isCoordinateGridActive && (
+        <div className="absolute top-3 right-4 z-10 pointer-events-none text-xs font-mono px-3.5 py-1.5 rounded-xl border shadow-md backdrop-blur-md transition-all bg-cyan-950/90 border-cyan-500 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+          COORDINATE SCALE ACTIVE · 1 UNIT = 1 METRE
+        </div>
+      )}
     </div>
   );
 };

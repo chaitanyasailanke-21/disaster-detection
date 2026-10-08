@@ -85,17 +85,19 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
-      {/* 1. Sleek Command Center Top Bar: Displays Brand, Controls & Watch Tower 01 */}
+      {/* 1. Sleek Command Center Top Bar: Displays Brand, 90-Sec Demo Button & Single Small Menu Button */}
       <Header
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenWelcome={() => setIsWelcomeOpen(true)}
         isWatchtowerOpen={isWatchtowerOpen}
         onToggleWatchtower={() => setIsWatchtowerOpen(!isWatchtowerOpen)}
+        isBottomStatusExpanded={isBottomStatusExpanded}
+        onToggleBottomStatus={() => setIsBottomStatusExpanded(!isBottomStatusExpanded)}
       />
 
       {/* 2. Interactive Main Workspace */}
-      <div className="relative flex-1 w-full h-[calc(100vh-3.25rem)] overflow-hidden flex">
+      <div className="relative flex-1 w-full h-[calc(100vh-3rem)] overflow-hidden flex">
         
         {/* Unified Mission Control & Navigation Sidebar (Houses all controls requested by user) */}
         <UnifiedSidebar
@@ -136,69 +138,30 @@ export default function App() {
             />
           )}
 
-          {/* Bottom Status Bar: Field Prototype Telemetry Drawer */}
-          {!isEngineeringView && (
+          {/* Bottom Status Bar: Field Prototype Telemetry Drawer (Hidden until toggled from single small menu button) */}
+          {!isEngineeringView && isBottomStatusExpanded && (
             <div className="absolute bottom-0 left-0 right-0 z-30 font-mono text-xs select-none">
-              {/* Expandable Content Drawer */}
-              {isBottomStatusExpanded && (
-                <div className="bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 p-3 max-h-[42vh] overflow-y-auto shadow-2xl animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Cpu className="w-4 h-4 text-emerald-400" />
-                      <span className="font-bold text-slate-200">
-                        Field Prototype Telemetry &amp; Decision Cascade
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsBottomStatusExpanded(false)}
-                      className="flex items-center gap-1 text-slate-400 hover:text-white bg-slate-900 px-2 py-1 rounded border border-slate-800 cursor-pointer"
-                    >
-                      <ChevronDown className="w-3.5 h-3.5" />
-                      <span>Collapse</span>
-                    </button>
+              <div className="bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 p-3 max-h-[42vh] overflow-y-auto shadow-2xl animate-fade-in">
+                <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-slate-200">
+                      Field Prototype Telemetry &amp; Decision Cascade
+                    </span>
                   </div>
-
-                  <NodeMatrix
-                    onSelectNode={handleSelectNode}
-                    selectedNodeId={selectedNodeId}
-                  />
-                </div>
-              )}
-
-              {/* Minimal Bottom Strip */}
-              <div className="h-8 bg-slate-950/90 backdrop-blur-md border-t border-slate-800/80 px-4 flex items-center justify-between text-[11px] text-slate-400">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <strong className="text-slate-200 tracking-wide">UNKNOWN SIX · EMERGENCY GRID</strong>
-                  </span>
-
-                  <span className="hidden sm:inline border-l border-slate-800 pl-3">
-                    STATE: <strong className={stateColors[simulationEngine.systemState]}>{simulationEngine.systemState}</strong>
-                  </span>
-
-                  <span className="hidden md:inline border-l border-slate-800 pl-3">
-                    HAZARD CONFIDENCE: <strong className="text-sky-400">{(simulationEngine.aggregatedHazardConfidence * 100).toFixed(0)}%</strong>
-                  </span>
-
-                  <span className="hidden lg:inline border-l border-slate-800 pl-3">
-                    DEPLOYMENT: <strong className="text-slate-300">
-                      {simulationEngine.virtualScaleCount === 2 
-                        ? '2 Physical Prototype Nodes' 
-                        : `${simulationEngine.virtualScaleCount} Nodes (Targeted Grid)`}
-                    </strong>
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setIsBottomStatusExpanded(!isBottomStatusExpanded)}
-                    className="flex items-center gap-1 text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 px-2.5 py-0.5 rounded border border-slate-700/80 transition-colors text-[10px] cursor-pointer"
+                    onClick={() => setIsBottomStatusExpanded(false)}
+                    className="flex items-center gap-1 text-slate-400 hover:text-white bg-slate-900 px-2 py-1 rounded border border-slate-800 cursor-pointer"
                   >
-                    <span>{isBottomStatusExpanded ? 'Collapse Telemetry' : 'View Node Telemetry'}</span>
-                    {isBottomStatusExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span>Close</span>
                   </button>
                 </div>
+
+                <NodeMatrix
+                  onSelectNode={handleSelectNode}
+                  selectedNodeId={selectedNodeId}
+                />
               </div>
             </div>
           )}

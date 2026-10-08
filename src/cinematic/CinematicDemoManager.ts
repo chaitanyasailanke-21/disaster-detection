@@ -174,14 +174,14 @@ export class CinematicDemoManager {
   // ─────────────────────────────────────────────────────────────────────────
   private async actLandslide() {
     this.setPhase('LANDSLIDE', 0);
-    simulationEngine.clearHazard();
+    simulationEngine.clearHazard(false);
     simulationEngine.setWeather('RAIN');
 
     // Snap high above hill — no transition gap from overview
     this.driver?.snapTo([-28, 60, 44], [-15, 0, 28]);
     await this.wait(0.05);
 
-    // Fly 1: slow descent — 6 s — trigger landslide at 2 s in so full 17-step narrative & beams play out
+    // Fly 1: slow descent — 6 s — trigger landslide at 2 s in so full narrative & beams play out
     this.driver?.flyTo([-20, 42, 50], [-12, 2, 28], 6.0, 'ease-in-out');
     await this.wait(2.0);
     simulationEngine.triggerHazard('LANDSLIDE', 'HIGH');
@@ -199,7 +199,7 @@ export class CinematicDemoManager {
   // ─────────────────────────────────────────────────────────────────────────
   private async actFlood() {
     this.setPhase('FLOOD', 0);
-    simulationEngine.clearHazard();
+    simulationEngine.clearHazard(false);
     simulationEngine.setWeather('HEAVY_RAIN');
 
     // Snap to south corner — forest side, looking up the river
@@ -225,7 +225,7 @@ export class CinematicDemoManager {
   // ─────────────────────────────────────────────────────────────────────────
   private async actForestFire() {
     this.setPhase('FOREST_FIRE', 0);
-    simulationEngine.clearHazard();
+    simulationEngine.clearHazard(false);
     simulationEngine.setWeather('FIRE_HAZE');
 
     this.driver?.snapTo([12, 24, 6], [-16, 1, -12]);
@@ -245,7 +245,7 @@ export class CinematicDemoManager {
   // ─────────────────────────────────────────────────────────────────────────
   private async actAirPollution() {
     this.setPhase('AIR_POLLUTION', 0);
-    simulationEngine.clearHazard();
+    simulationEngine.clearHazard(false);
     simulationEngine.setWeather('CLEAR');
 
     this.driver?.snapTo([52, 24, 6], [50, 14, -44]);
@@ -266,7 +266,7 @@ export class CinematicDemoManager {
     this.setPhase('HEAVY_RAIN', 0);
 
     // Step 1: clear previous hazard (this internally calls setWeather('CLEAR'))
-    simulationEngine.clearHazard();
+    simulationEngine.clearHazard(false);
     // Step 2: immediately override with rain — runs synchronously after clearHazard
     simulationEngine.setWeather('RAIN');
 
@@ -277,7 +277,7 @@ export class CinematicDemoManager {
     this.driver?.startOrbit([0, 0, 0], 70, 48, 0.08);
     await this.wait(1.0);
 
-    // EXTREME_RAIN sets weather to STORM internally and runs the 17-step narrative
+    // EXTREME_RAIN sets weather to STORM internally and runs the narrative
     simulationEngine.triggerHazard('EXTREME_RAIN', 'HIGH');
     this.setPhase('HEAVY_RAIN', 0.4);
 
@@ -315,29 +315,10 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 8 — Evacuation  (~12 s)
-  //
-  // Village: X 29–51, Z 14–51.  Shelter: (70, 0.55, 28.5).
-  // Evacuation road: X 50–75, Z 25–30.
-  // Villagers run: home → (45, 27.5) → (50.5, 27.5) → shelter assembly.
-  //
-  // To SHOW PEOPLE RUNNING we need to be low enough to see them (~Y 12-16)
-  // while still having village and shelter both visible in the same frame.
-  //
-  //   Snap:   South-west of village, low, looking NE along the evac corridor.
-  //           People visible left, shelter visible right.
-  //           pos=(22, 14, 48)  look=(58, 1, 26)
-  //
-  //   Fly 1:  Drift east and lower — follow the running people.
-  //           pos=(34, 10, 46)  look=(62, 1, 27)    4 s
-  //           At Y=10 individual running villager figures are clearly visible.
-  //
-  //   Fly 2:  Widen out to show full shelter arrival + entire evacuation path.
-  //           pos=(48, 18, 50)  look=(65, 1, 27)    4 s + 2 s hold
   // ─────────────────────────────────────────────────────────────────────────
   private async actEvacuation() {
     this.setPhase('EVACUATION', 0);
     // Keep MULTI_HAZARD active — villagers only run when disaster is active
-    // (existing ThreeScene logic: runProgress advances when systemState is CRITICAL)
     simulationEngine.triggerHazard('MULTI_HAZARD', 'HIGH');
     simulationEngine.setWeather('STORM');
 
@@ -357,31 +338,14 @@ export class CinematicDemoManager {
 
   // ─────────────────────────────────────────────────────────────────────────
   // ACT 9 — Return Home  (~10 s)
-  //
-  // After evacuation people walk back to their houses.
-  // clearHazard() stops the disaster → isDisasterActive becomes false →
-  // ThreeScene automatically reverses runProgress → people walk home.
-  //
-  // Camera: low village street level, show people walking back into houses.
-  // Village houses: X 29–51, Z 14–51.
-  //
-  //   Snap:   Low, inside the village, looking along the main street.
-  //           pos=(36, 5, 54)  look=(38, 1, 30)
-  //           Houses visible both sides, people walking toward them.
-  //
-  //   Fly 1:  Drift forward slowly along the street — follow the returning people.
-  //           pos=(38, 4, 40)  look=(38, 1, 22)    5 s
-  //
-  //   Fly 2:  Gentle rise to show village rooftops + people at their doors.
-  //           pos=(38, 10, 56)  look=(38, 1, 30)   4 s + 1 s hold
   // ─────────────────────────────────────────────────────────────────────────
   private async actReturnHome() {
     this.setPhase('RETURN_HOME', 0);
     simulationEngine.triggerWatchtowerAlarm(false);
 
-    // Clear all hazards — this triggers isDisasterActive = false in ThreeScene
-    // which makes runProgress decrease → villagers walk back to houses
-    simulationEngine.clearHazard();
+    // Clear all hazards & initiate the RED volumetric plasma beam cloud upload to the Satellite!
+    simulationEngine.clearHazard(true);
+    simulationEngine.triggerCloudDataUpload(24000);
     simulationEngine.setWeather('CLEAR');
 
     // Low street-level position — inside the village
@@ -399,36 +363,22 @@ export class CinematicDemoManager {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // ACT 10 — Final Overview  (~14 s)
-  //
-  // The recovery scene. Weather cleared. People back in houses.
-  // Factory smoke turns WHITE (normal ops, no pollution event active).
-  // Forest fire out — only residual smoke drifting (fire particles fade,
-  // smoke lingers via factory smoke system which is always-on).
-  // Landslide settled — boulders at rest.
-  //
-  // Camera: high slow orbit showing the whole environment in recovery.
-  //
-  //   Shot 1: Pull back to high aerial — show full environment.
-  //           pos=(0, 72, 58)  look=(0, 2, 0)
-  //
-  //   Shot 2: Slow wide orbit — factory (NE), forest (W), village (E),
-  //           river (center), hills (NW) all visible. No more disasters.
-  //           Final peaceful establishing shot.
+  // ACT 10 — Final Overview & Satellite Cloud Data Upload (~14 s)
   // ─────────────────────────────────────────────────────────────────────────
   private async actFinalShot() {
     this.setPhase('FINAL_SHOT', 0);
+    simulationEngine.triggerCloudDataUpload(16000);
 
-    // Pull up to high aerial showing the recovering environment
-    await this.fly([0, 72, 58], [0, 2, 0], 4.0, 0, 'ease-in-out');
-    this.setPhase('FINAL_SHOT', 0.25);
+    // Pull up to frame Watch Tower 01 Superior Node shooting the RED volumetric plasma beam
+    // straight up to the high-altitude Orbital Satellite
+    await this.fly([4, 52, 54], [38, 28, -16], 4.5, 1.5, 'ease-in-out');
+    this.setPhase('FINAL_SHOT', 0.35);
 
-    // Wide slow orbit — factory smoke is white (no event), forest smoke
-    // lingers, river back to normal, people in houses, village peaceful
-    this.driver?.startOrbit([0, 0, 0], 92, 70, 0.042);
-    await this.wait(5.0);
-    this.setPhase('FINAL_SHOT', 0.6);
-    await this.wait(5.0);
+    // Wide slow orbit — red plasma beam from Superior Node to Satellite clearly visible
+    this.driver?.startOrbit([18, 16, -8], 84, 56, 0.042);
+    await this.wait(4.5);
+    this.setPhase('FINAL_SHOT', 0.7);
+    await this.wait(4.0);
     this.driver?.stopOrbit();
 
     this.setPhase('FINAL_SHOT', 1);

@@ -28,8 +28,8 @@ const PHASE_LABELS: Record<string, string> = {
   HEAVY_RAIN:     'HEAVY RAIN — STORM SEQUENCE',
   MULTIHAZARD:    'MULTIHAZARD — ALL SECTORS',
   EVACUATION:     'EVACUATION — MOVING TO SHELTER',
-  RETURN_HOME:    'ALL CLEAR — RETURNING HOME',
-  FINAL_SHOT:     'RECOVERY — FINAL OVERVIEW',
+  RETURN_HOME:    'HAZARD COMPLETE — BACK TO NORMAL',
+  FINAL_SHOT:     'CLOUD DATA UPLOADED & SAVED — SATELLITE UPLINK',
 };
 
 const PHASE_ORDER = [
@@ -401,13 +401,13 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
       {/* ── 4. ACTIVE CINEMATIC HUD — Skip button + Bold Phase Label + Narrative Flow ── */}
       {isActive && !showWelcome && (
         <>
-          {/* Phase label & Narrative Flow — bottom center */}
+          {/* Phase label & Narrative Flow — bottom center (Half Size) */}
           {phase && phase !== 'FADE_OUT' && PHASE_LABELS[phase] && (
             <div
               aria-live="polite"
               style={{
                 position: 'fixed',
-                bottom: '2.75rem',
+                bottom: '1.35rem',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 56,
@@ -415,36 +415,36 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '0.6rem',
-                width: 'min(94vw, 860px)',
+                gap: '0.3rem',
+                width: 'min(76vw, 430px)',
               }}
             >
-              {/* High-visibility Bold Phase Title Card (ENVIRONMENT OVERVIEW, FLOOD, LANDSLIDE, etc.) */}
+              {/* High-visibility Bold Phase Title Card — Reduced to Half Size */}
               <div
                 key={phase}
                 style={{
                   background: 'rgba(2, 6, 23, 0.92)',
-                  border: '2px solid rgba(56, 189, 248, 0.85)',
-                  borderRadius: '0.85rem',
-                  padding: '0.65rem 1.6rem',
-                  boxShadow: '0 0 28px rgba(14, 165, 233, 0.45), 0 8px 24px rgba(0, 0, 0, 0.85)',
-                  backdropFilter: 'blur(12px)',
+                  border: '1.5px solid rgba(56, 189, 248, 0.85)',
+                  borderRadius: '0.5rem',
+                  padding: '0.32rem 0.85rem',
+                  boxShadow: '0 0 16px rgba(14, 165, 233, 0.4), 0 4px 14px rgba(0, 0, 0, 0.8)',
+                  backdropFilter: 'blur(10px)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.16rem',
                   animation: 'cinematic-label-in 0.5s ease-out',
                 }}
               >
                 <span
                   style={{
                     color: '#ffffff',
-                    fontSize: 'clamp(1.05rem, 2.2vw, 1.45rem)',
+                    fontSize: 'clamp(0.56rem, 1.1vw, 0.74rem)',
                     fontWeight: 900,
-                    letterSpacing: '0.16em',
+                    letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     fontFamily: "'Chakra Petch', 'Plus Jakarta Sans', system-ui, sans-serif",
-                    textShadow: '0 0 18px rgba(56, 189, 248, 0.75), 0 2px 6px rgba(0,0,0,0.95)',
+                    textShadow: '0 0 10px rgba(56, 189, 248, 0.7), 0 1px 4px rgba(0,0,0,0.95)',
                     textAlign: 'center',
                   }}
                 >
@@ -456,16 +456,16 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    gap: '0.28rem',
                     flexWrap: 'wrap',
                     justifyContent: 'center',
                   }}
                 >
                   <span
                     style={{
-                      fontSize: '0.78rem',
+                      fontSize: '0.46rem',
                       fontWeight: 800,
-                      letterSpacing: '0.1em',
+                      letterSpacing: '0.08em',
                       color: '#38bdf8',
                       textTransform: 'uppercase',
                       fontFamily: "'JetBrains Mono', monospace",
@@ -475,13 +475,13 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: 'clamp(0.88rem, 1.6vw, 1.1rem)',
+                      fontSize: 'clamp(0.48rem, 0.82vw, 0.58rem)',
                       fontWeight: 900,
-                      letterSpacing: '0.08em',
+                      letterSpacing: '0.06em',
                       color: '#fde047',
                       textTransform: 'uppercase',
                       fontFamily: "'JetBrains Mono', monospace",
-                      textShadow: '0 0 14px rgba(250, 204, 21, 0.6)',
+                      textShadow: '0 0 8px rgba(250, 204, 21, 0.55)',
                     }}
                   >
                     {narrativeLabel}
@@ -489,19 +489,19 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
                 </div>
               </div>
 
-              {/* Progress dots */}
-              <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', background: 'rgba(2,6,23,0.85)', padding: '0.35rem 0.85rem', borderRadius: '9999px', border: '1px solid rgba(56,189,248,0.35)' }}>
+              {/* Progress dots (Half Size) */}
+              <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', background: 'rgba(2,6,23,0.85)', padding: '0.18rem 0.45rem', borderRadius: '9999px', border: '1px solid rgba(56,189,248,0.35)' }}>
                 {PHASE_ORDER.slice(0, -1).map((p, i) => (
                   <div
                     key={p}
                     style={{
-                      width:  i === phaseIndex ? '2.0rem' : '0.5rem',
-                      height: '0.4rem',
+                      width:  i === phaseIndex ? '1.0rem' : '0.26rem',
+                      height: '0.22rem',
                       borderRadius: '9999px',
                       background: i <= phaseIndex
                         ? '#38bdf8'
                         : 'rgba(148,163,184,0.35)',
-                      boxShadow: i === phaseIndex ? '0 0 10px rgba(56,189,248,0.8)' : 'none',
+                      boxShadow: i === phaseIndex ? '0 0 6px rgba(56,189,248,0.8)' : 'none',
                       transition: 'width 0.4s ease, background 0.4s ease',
                     }}
                   />
@@ -509,95 +509,6 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
               </div>
             </div>
           )}
-
-          {/* Live 17-Step Vertical Narrative Flowchart Card — Left Side */}
-          <div
-            style={{
-              position: 'fixed',
-              top: '4.1rem',
-              left: '0.85rem',
-              zIndex: 56,
-              pointerEvents: 'none',
-              background: 'rgba(2, 6, 23, 0.90)',
-              border: '2px solid rgba(56, 189, 248, 0.65)',
-              borderRadius: '0.85rem',
-              padding: '0.6rem 0.85rem',
-              backdropFilter: 'blur(12px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
-              maxHeight: 'calc(100vh - 8.5rem)',
-              overflowY: 'auto',
-              width: 'clamp(220px, 22vw, 290px)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '0.76rem',
-                fontWeight: 900,
-                letterSpacing: '0.12em',
-                color: '#38bdf8',
-                textTransform: 'uppercase',
-                borderBottom: '1px solid rgba(56, 189, 248, 0.35)',
-                paddingBottom: '0.35rem',
-                marginBottom: '0.4rem',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              DECISION NARRATIVE FLOW
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.08rem' }}>
-              {NARRATIVE_FLOW_STEPS.map((stepText, idx) => {
-                const isCurrent = idx === narrativeIdx;
-                const isDone = idx < narrativeIdx;
-                return (
-                  <React.Fragment key={stepText}>
-                    <div
-                      style={{
-                        width: '100%',
-                        padding: isCurrent ? '0.24rem 0.5rem' : '0.12rem 0.45rem',
-                        borderRadius: '0.35rem',
-                        background: isCurrent
-                          ? 'rgba(14, 165, 233, 0.32)'
-                          : isDone
-                          ? 'rgba(16, 185, 129, 0.14)'
-                          : 'transparent',
-                        border: isCurrent
-                          ? '1.5px solid #38bdf8'
-                          : isDone
-                          ? '1px solid rgba(16, 185, 129, 0.35)'
-                          : '1px solid transparent',
-                        color: isCurrent
-                          ? '#fef08a'
-                          : isDone
-                          ? '#6ee7b7'
-                          : '#cbd5e1',
-                        fontSize: isCurrent ? '0.76rem' : '0.68rem',
-                        fontWeight: 800,
-                        letterSpacing: '0.04em',
-                        textAlign: 'center',
-                        fontFamily: "'JetBrains Mono', monospace",
-                        boxShadow: isCurrent ? '0 0 12px rgba(56, 189, 248, 0.45)' : 'none',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      {stepText}
-                    </div>
-                    {idx < NARRATIVE_FLOW_STEPS.length - 1 && (
-                      <span
-                        style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 900,
-                          lineHeight: 0.95,
-                          color: idx < narrativeIdx ? '#34d399' : '#38bdf8',
-                        }}
-                      >
-                        ↓
-                      </span>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Skip Demo button — top right */}
           <button
@@ -639,6 +550,108 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({
             SKIP DEMO  ✕
           </button>
         </>
+      )}
+
+      {/* Live 19-Step Vertical Decision Narrative Flowchart Card — Left Side (Increased by 50%) */}
+      {!showWelcome && (isActive || simulationEngine.activeHazard !== null || simulationEngine.isCloudUploading || narrativeIdx > 0) && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '3.8rem',
+            left: '0.75rem',
+            zIndex: 56,
+            pointerEvents: 'none',
+            background: 'rgba(2, 6, 23, 0.92)',
+            border: '1.5px solid rgba(56, 189, 248, 0.72)',
+            borderRadius: '0.68rem',
+            padding: '0.45rem 0.63rem',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 6px 24px rgba(0, 0, 0, 0.8)',
+            maxHeight: 'calc(100vh - 5.2rem)',
+            overflowY: 'auto',
+            width: 'clamp(168px, 16.5vw, 218px)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.63rem',
+              fontWeight: 900,
+              letterSpacing: '0.09em',
+              color: '#38bdf8',
+              textTransform: 'uppercase',
+              borderBottom: '1px solid rgba(56, 189, 248, 0.38)',
+              paddingBottom: '0.27rem',
+              marginBottom: '0.3rem',
+              fontFamily: "'JetBrains Mono', monospace",
+              textAlign: 'center',
+            }}
+          >
+            DECISION NARRATIVE FLOW
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.06rem' }}>
+            {NARRATIVE_FLOW_STEPS.map((stepText, idx) => {
+              const isCurrent = idx === narrativeIdx;
+              const isDone = idx < narrativeIdx;
+              const isCloudStep = idx >= 17;
+              return (
+                <React.Fragment key={stepText}>
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: isCurrent ? '0.18rem 0.38rem' : '0.08rem 0.3rem',
+                      borderRadius: '0.3rem',
+                      background: isCurrent
+                        ? isCloudStep
+                          ? 'rgba(239, 68, 68, 0.36)'
+                          : 'rgba(14, 165, 233, 0.34)'
+                        : isDone
+                        ? 'rgba(16, 185, 129, 0.16)'
+                        : 'transparent',
+                      border: isCurrent
+                        ? isCloudStep
+                          ? '1.5px solid #ef4444'
+                          : '1.5px solid #38bdf8'
+                        : isDone
+                        ? '1px solid rgba(16, 185, 129, 0.38)'
+                        : '1px solid transparent',
+                      color: isCurrent
+                        ? '#fef08a'
+                        : isDone
+                        ? '#6ee7b7'
+                        : '#cbd5e1',
+                      fontSize: isCurrent ? '0.63rem' : '0.54rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.02em',
+                      textAlign: 'center',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      boxShadow: isCurrent
+                        ? isCloudStep
+                          ? '0 0 10px rgba(239, 68, 68, 0.55)'
+                          : '0 0 9px rgba(56, 189, 248, 0.45)'
+                        : 'none',
+                      transition: 'all 0.2s ease',
+                      lineHeight: 1.18,
+                    }}
+                  >
+                    {stepText}
+                  </div>
+                  {idx < NARRATIVE_FLOW_STEPS.length - 1 && (
+                    <span
+                      style={{
+                        fontSize: '0.51rem',
+                        fontWeight: 900,
+                        lineHeight: 0.88,
+                        color: idx < narrativeIdx ? '#34d399' : idx >= 16 ? '#f87171' : '#38bdf8',
+                      }}
+                    >
+                      ↓
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* ── Global keyframe styles ─────────────────────────────────────────── */}

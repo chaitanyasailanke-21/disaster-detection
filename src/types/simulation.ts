@@ -147,7 +147,8 @@ export type MessageType =
   | 'NODE_STATUS' 
   | 'ACK' 
   | 'EVENT_CLEAR' 
-  | 'SYNC_QUEUE';
+  | 'SYNC_QUEUE'
+  | 'CLOUD_UPLOAD';
 
 export interface LoRaPacket {
   id: string;

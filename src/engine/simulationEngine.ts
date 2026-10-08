@@ -577,15 +577,15 @@ export const JUDGE_DEMO_STEPS: DemoStep[] = [
   {
     stepIndex: 9,
     totalSteps: 9,
-    phase: '9. LOCAL EDGE OPERATION CONTINUES',
-    title: '9. Autonomous Edge Grid & Targeted Deployment',
-    description: 'Full cooperative edge intelligence loop verified from NORMAL to LOCAL EDGE OPERATION CONTINUES.',
-    technicalDetail: 'All 17 narrative stages verified on 3D digital twin.',
-    aegisCallout: 'NARRATIVE COMPLETE: LOCAL EDGE OPERATION CONTINUES',
-    systemState: 'CRITICAL',
+    phase: '9. BACK TO NORMAL → CLOUD DATA UPLOADED & SAVED',
+    title: '9. Back to Normal → Red Plasma Beam Cloud Upload to Satellite',
+    description: 'Hazard complete and system returns to NORMAL. Watch Tower 01 Superior Node transmits a RED volumetric plasma beam to the Orbital Satellite, uploading and saving all edge ledger data to the cloud.',
+    technicalDetail: 'HAZARD COMPLETE / BACK TO NORMAL ↓ CLOUD DATA UPLOADED & SAVED — Red plasma beam from NODE-SUPERIOR to NODE-SATELLITE.',
+    aegisCallout: 'NARRATIVE COMPLETE: CLOUD DATA UPLOADED & SAVED VIA SATELLITE',
+    systemState: 'NORMAL',
     weather: 'CLEAR',
     cameraMode: 'DEPLOYMENT_AERIAL',
-    hazardConfidence: 0.94,
+    hazardConfidence: 0.05,
     node1Trust: 95,
     node2Trust: 94,
     durationMs: 10000
@@ -609,7 +609,9 @@ export const NARRATIVE_FLOW_STEPS = [
   'WARNING',
   'BUZZER / SIREN',
   'WAN FAILURE',
-  'LOCAL EDGE OPERATION CONTINUES'
+  'LOCAL EDGE OPERATION CONTINUES',
+  'HAZARD COMPLETE / BACK TO NORMAL',
+  'CLOUD DATA UPLOADED & SAVED'
 ] as const;
 
 export class SimulationEngine {
@@ -745,10 +747,12 @@ export class SimulationEngine {
   public falseAlarmBanner: string | null = null;
   public confirmedEventBanner: string | null = null;
 
-  // 17-Step Narrative Flow State
+  // 19-Step Narrative Flow State
   public currentNarrativeStepIndex: number = 0;
   public currentNarrativeStepLabel: string = NARRATIVE_FLOW_STEPS[0];
+  public isCloudUploading: boolean = false;
   private narrativeTimerIds: Array<ReturnType<typeof setTimeout>> = [];
+  private cloudUploadTimerId: ReturnType<typeof setTimeout> | null = null;
 
   public setNarrativeStep(index: number) {
     const clamped = Math.max(0, Math.min(NARRATIVE_FLOW_STEPS.length - 1, index));
@@ -760,6 +764,59 @@ export class SimulationEngine {
   private clearNarrativeTimers() {
     this.narrativeTimerIds.forEach(id => clearTimeout(id));
     this.narrativeTimerIds = [];
+    if (this.cloudUploadTimerId) {
+      clearTimeout(this.cloudUploadTimerId);
+      this.cloudUploadTimerId = null;
+    }
+    this.isCloudUploading = false;
+  }
+
+  public triggerCloudDataUpload(durationMs: number = 9000) {
+    this.isInternetOnline = true;
+    this.isCloudUploading = true;
+    this.setNarrativeStep(17); // HAZARD COMPLETE / BACK TO NORMAL
+
+    // Dispatch red volumetric plasma beam from Superior Node -> Satellite immediately
+    this.dispatchLoRaPacket('NODE-SUPERIOR', 'NODE-SATELLITE', 'CLOUD_UPLOAD', {
+      status: 'CLOUD_ARCHIVE_SYNC',
+      ledger_records: this.evidenceLedger.length,
+      uplink: 'KA_BAND_SATELLITE'
+    });
+
+    const step18Tid = setTimeout(() => {
+      this.setNarrativeStep(18); // CLOUD DATA UPLOADED & SAVED
+      this.dispatchLoRaPacket('NODE-SUPERIOR', 'NODE-SATELLITE', 'CLOUD_UPLOAD', {
+        status: 'CLOUD_DATA_SAVED',
+        saved_events: this.evidenceLedger.length,
+        integrity: 'SHA256_VERIFIED'
+      });
+      this.addLedgerEntry(
+        'DECISION',
+        'CLOUD DATA UPLOADED & SAVED: Superior Node transmitted buffered edge evidence ledger to Orbital Satellite via Ka-Band uplink',
+        'NODE-SUPERIOR',
+        99,
+        0.05,
+        0.05,
+        'NORMAL',
+        'NARRATIVE: LOCAL EDGE OPERATION CONTINUES ↓ HAZARD COMPLETE / BACK TO NORMAL ↓ CLOUD DATA UPLOADED & SAVED'
+      );
+      this.addLog(
+        'GATEWAY',
+        'CLOUD DATA UPLOADED & SAVED (SUPERIOR NODE → SATELLITE)',
+        'Hazard resolved & system back to NORMAL. Full edge telemetry & evidence ledger uploaded via red plasma beam to Orbital Satellite and saved to cloud.',
+        'success',
+        'NODE-SUPERIOR'
+      );
+    }, 650);
+    this.narrativeTimerIds.push(step18Tid);
+
+    if (this.cloudUploadTimerId) clearTimeout(this.cloudUploadTimerId);
+    this.cloudUploadTimerId = setTimeout(() => {
+      this.isCloudUploading = false;
+      this.activePackets = this.activePackets.filter(p => p.destinationNodeId !== 'NODE-SATELLITE');
+      this.setNarrativeStep(0);
+      this.notify();
+    }, durationMs);
   }
 
   private scheduleNarrativeStep(delayMs: number, stepIndex: number, action?: () => void) {
@@ -1207,7 +1264,8 @@ export class SimulationEngine {
     this.notify();
   }
 
-  public clearHazard() {
+  public clearHazard(triggerCloudSync: boolean = true) {
+    const hadActiveHazard = this.activeHazard !== null;
     this.clearNarrativeTimers();
     this.activeHazard = null;
     this.activeScenarioName = 'NORMAL_NETWORK';
@@ -1221,6 +1279,9 @@ export class SimulationEngine {
     this.resetSensorsToBaseline();
     this.recomputeEvidenceFusion();
     this.addLog('HAZARD', 'Hazard Cleared', 'System returned to equilibrium (NORMAL).', 'info');
+    if (hadActiveHazard && triggerCloudSync) {
+      this.triggerCloudDataUpload(8500);
+    }
     this.notify();
   }
 
@@ -1804,6 +1865,37 @@ export class SimulationEngine {
         'NARRATIVE: WARNING ↓ BUZZER / SIREN ↓ WAN FAILURE ↓ LOCAL EDGE OPERATION CONTINUES'
       );
     });
+
+    // STEP 17: HAZARD COMPLETE / BACK TO NORMAL (6650ms)
+    this.scheduleNarrativeStep(6650, 17, () => {
+      this.isInternetOnline = true;
+      this.isCloudUploading = true;
+      this.dispatchLoRaPacket('NODE-SUPERIOR', 'NODE-SATELLITE', 'CLOUD_UPLOAD', {
+        status: 'HAZARD_COMPLETE_CLOUD_SYNC',
+        ledger_records: this.evidenceLedger.length
+      });
+    });
+
+    // STEP 18: CLOUD DATA UPLOADED & SAVED (7150ms) — Red Volumetric Plasma Beam from Superior Node -> Orbital Satellite
+    this.scheduleNarrativeStep(7150, 18, () => {
+      this.isInternetOnline = true;
+      this.isCloudUploading = true;
+      this.dispatchLoRaPacket('NODE-SUPERIOR', 'NODE-SATELLITE', 'CLOUD_UPLOAD', {
+        status: 'CLOUD_DATA_UPLOADED_AND_SAVED',
+        saved_events: this.evidenceLedger.length,
+        uplink: 'SATELLITE_KA_BAND'
+      });
+      this.addLedgerEntry(
+        'DECISION',
+        'CLOUD DATA UPLOADED & SAVED: Red plasma beam uplink from Watch Tower 01 Superior Node to Orbital Satellite completed cloud archival',
+        'NODE-SUPERIOR',
+        99,
+        this.aggregatedHazardConfidence,
+        0.05,
+        'NORMAL',
+        'NARRATIVE: LOCAL EDGE OPERATION CONTINUES ↓ HAZARD COMPLETE / BACK TO NORMAL ↓ CLOUD DATA UPLOADED & SAVED'
+      );
+    });
   }
 
   // ==========================================
@@ -1913,8 +2005,9 @@ export class SimulationEngine {
     }
 
     const srcNode = this.getNode(source);
-    const dstNode = this.getNode(dest);
-    if (!srcNode || !dstNode) return;
+    const isDestSatellite = dest === 'NODE-SATELLITE';
+    const dstNode = isDestSatellite ? undefined : this.getNode(dest);
+    if (!srcNode || (!dstNode && !isDestSatellite)) return;
     if (srcNode.loraStatus === 'DISCONNECTED') return;
 
     // If a beam already exists between these two nodes, keep it alive smoothly without duplicate stacking
@@ -1937,7 +2030,9 @@ export class SimulationEngine {
     const pktId = `PKT-${this.packetSeqCounter}`;
 
     const startPos: [number, number, number] = [...srcNode.position];
-    const endPos: [number, number, number] = [...dstNode.position];
+    const endPos: [number, number, number] = isDestSatellite
+      ? [44.0, 58.0, -36.0]
+      : [...dstNode!.position];
 
     const pkt: LoRaPacket = {
       id: pktId,
@@ -2083,6 +2178,14 @@ export class SimulationEngine {
     if (this.beamSustainerTimer >= 0.85) {
       this.beamSustainerTimer = 0;
       const hType = this.activeHazard?.type;
+
+      // Sustain Red Volumetric Plasma Beam from Superior Node -> Orbital Satellite when uploading to cloud
+      if (this.isCloudUploading || this.currentNarrativeStepIndex >= 17) {
+        this.dispatchLoRaPacket('NODE-SUPERIOR', 'NODE-SATELLITE', 'CLOUD_UPLOAD', {
+          status: 'CLOUD_DATA_UPLOADED_AND_SAVED',
+          saved_events: this.evidenceLedger.length
+        }, true);
+      }
 
       if (hType) {
         const allowPeerBeams = this.currentNarrativeStepIndex >= 7;
@@ -2240,7 +2343,7 @@ export class SimulationEngine {
       this.isRiskHeatmapActive = false;
     }
 
-    // Synchronize 17-step narrative index with the 9 Judge Demo steps
+    // Synchronize 19-step narrative index with the 9 Judge Demo steps
     const stepToNarrativeMap: Record<number, number> = {
       1: 1,  // NORMAL -> RAIN / ENVIRONMENTAL CHANGE
       2: 3,  // ANOMALY DETECTED -> "IS THIS REAL?"
@@ -2249,8 +2352,8 @@ export class SimulationEngine {
       5: 9,  // INDEPENDENT CORROBORATION -> LoRa VERIFY_RESPONSE
       6: 11, // SUPERIOR NODE -> EVIDENCE FUSION
       7: 14, // CONFIDENCE > ALERT THRESHOLD -> WARNING -> BUZZER / SIREN
-      8: 15, // WAN FAILURE -> LOCAL EDGE OPERATION CONTINUES
-      9: 16  // LOCAL EDGE OPERATION CONTINUES
+      8: 16, // WAN FAILURE -> LOCAL EDGE OPERATION CONTINUES
+      9: 18  // HAZARD COMPLETE / BACK TO NORMAL -> CLOUD DATA UPLOADED & SAVED
     };
     this.setNarrativeStep(stepToNarrativeMap[step.stepIndex] ?? 0);
 
@@ -2287,7 +2390,8 @@ export class SimulationEngine {
     } else if (step.stepIndex === 8) {
       this.isInternetOnline = false;
     } else if (step.stepIndex === 9) {
-      this.isInternetOnline = false;
+      this.triggerWatchtowerAlarm(false);
+      this.triggerCloudDataUpload(10000);
     }
 
     this.addLog('SYSTEM', `Demo Step ${step.stepIndex}: ${step.title}`, step.description, 'info');
